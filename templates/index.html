@@ -1,0 +1,109 @@
+<html lang="en">
+<head>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/github-dark.min.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GREMLIN</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div class="app">
+
+    <!-- NEW: overlay for mobile drawer -->
+    <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+    <div class="sidebar" id="sidebar">
+
+        <button id="new-chat" onclick="newChat()">+ New Chat</button>
+
+        <div id="chat-list"></div>
+
+    </div>
+
+    <div class="chat-container">
+
+        <!-- NEW: mobile header with hamburger -->
+        <div class="mobile-header">
+            <button class="hamburger-btn" id="hamburger-btn" onclick="toggleSidebar()" aria-label="Toggle sidebar">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            <h1 class="mobile-title">GREMLIN</h1>
+        </div>
+
+        <h1 class="desktop-title">GREMLIN</h1>
+
+        <div id="chat-box"></div>
+
+        <div class="input-area">
+           
+         <label for="image" class="attach-btn">📎</label>
+
+            <input
+               type="file"
+               id="image"
+               accept="image/*"
+               hidden
+            >  
+
+            <input
+                id="message"
+                type="text"
+                placeholder="Ask GREMLIN anything..."
+            >
+            <button onclick="sendMessage()">Send</button>
+        </div>
+
+    </div>
+
+</div>
+<script>
+window.MathJax = {
+    tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']],
+        displayMath: [['$$', '$$'], ['\\[', '\\]']]
+    }
+};
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/python.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/cpp.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/java.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/javascript.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/xml.min.js"></script>
+
+<script src="/static/script.js"></script>
+
+<script>
+hljs.highlightAll();
+
+/* ===== NEW: mobile sidebar drawer logic (does not touch script.js) ===== */
+function toggleSidebar() {
+    document.getElementById('sidebar').classList.toggle('open');
+    document.getElementById('sidebar-overlay').classList.toggle('active');
+}
+
+// auto-close drawer when a chat item or "new chat" is tapped on mobile
+document.getElementById('chat-list').addEventListener('click', function () {
+    if (window.innerWidth <= 768) {
+        document.getElementById('sidebar').classList.remove('open');
+        document.getElementById('sidebar-overlay').classList.remove('active');
+    }
+});
+document.getElementById('new-chat').addEventListener('click', function () {
+    if (window.innerWidth <= 768) {
+        document.getElementById('sidebar').classList.remove('open');
+        document.getElementById('sidebar-overlay').classList.remove('active');
+    }
+});
+</script>
+  <div class="image-modal" id="image-modal">
+    <img id="modal-image">
+</div>
+</body>
+</html>
