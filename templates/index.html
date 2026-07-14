@@ -5,6 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GREMLIN</title>
     <link rel="stylesheet" href="/static/style.css">
+ <link rel="manifest" href="/static/manifest.json">
+
+<meta name="theme-color" content="#2563eb">
+
+<link rel="apple-touch-icon" href="/static/icon-192.png">
 </head>
 <body>
 <div class="app">
@@ -105,5 +110,10 @@ document.getElementById('new-chat').addEventListener('click', function () {
   <div class="image-modal" id="image-modal">
     <img id="modal-image">
 </div>
+    <script>
+if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("/static/sw.js");
+}
+</script>
 </body>
 </html>
