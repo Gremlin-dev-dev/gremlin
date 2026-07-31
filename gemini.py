@@ -16,7 +16,7 @@ Rules:
 Examples:
 
 ```python
-print("Hello").
+print("Hello")
 ```
 
 ```cpp
