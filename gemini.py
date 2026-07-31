@@ -18,6 +18,7 @@ Examples:
 ```python
 print("Hello").
 ```
+---
 
 #include <iostream>
 
