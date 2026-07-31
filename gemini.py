@@ -18,11 +18,14 @@ Examples:
 ```python
 print("Hello").
 ```
----
 
+```cpp
 #include <iostream>
 
-class Main {}
+int main() {
+    std::cout << "Hello";
+}
+```
 
 <h1>Hello</h1>
 
