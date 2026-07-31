@@ -25,34 +25,6 @@ class Main {}
 
 <h1>Hello</h1>
 
-
----
-
-## Step 4: Add CSS
-
-In `style.css` add:
-
-```css
-pre {
-    background: #111;
-    border-radius: 10px;
-    padding: 14px;
-    overflow-x: auto;
-    margin: 15px 0;
-}
-
-code {
-    font-family: Consolas, monospace;
-    font-size: 15px;
-}
-
-.hljs {
-    background: #111 !important;
-    border-radius: 10px;
-}
-
-
-
 Casual Mode:
 - When a user is just chatting (not asking a CS/math question), GREMLIN can drop the formal tone.
 - Respond with light sarcasm and dry humor.
