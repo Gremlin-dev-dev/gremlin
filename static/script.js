@@ -1,4 +1,3 @@
-
 let history = [];
 
 function scrollBottom() {
@@ -53,7 +52,10 @@ async function sendMessage() {
     const safe = document.createElement("div");
     safe.textContent = message;
 
-    userMessage.innerHTML = `<b>You:</b> ${safe.innerHTML}`;
+    userMessage.innerHTML = `
+        <span class="msg-label">You</span>
+        <div class="msg-content">${safe.innerHTML}</div>
+    `;
 
     if (imageInput.files.length) {
 
@@ -75,8 +77,7 @@ async function sendMessage() {
 
         };
 
-        userMessage.appendChild(document.createElement("br"));
-        userMessage.appendChild(img);
+        userMessage.querySelector(".msg-content").appendChild(img);
 
     }
 
@@ -90,9 +91,10 @@ async function sendMessage() {
     thinking.id = "thinking";
 
     thinking.innerHTML = `
-        <b>GREMLIN:</b><br><br>
+        <span class="msg-label">GREMLIN</span>
         <div class="typing">
-            GREMLIN is conquering<span>.</span><span>.</span><span>.</span>
+            GREMLIN is conquering
+            <span class="dot"></span><span class="dot"></span><span class="dot"></span>
         </div>
     `;
 
@@ -139,7 +141,7 @@ async function sendMessage() {
         bot.className = "bot-msg";
 
         bot.innerHTML = `
-            <b>GREMLIN:</b><br><br>
+            <span class="msg-label">GREMLIN</span>
             <div class="reply"></div>
         `;
 
@@ -159,7 +161,7 @@ async function sendMessage() {
         }
 
         if (attachBtn) {
-            attachBtn.textContent = "📎";
+            attachBtn.classList.remove("has-file");
         }
 
         scrollBottom();
@@ -172,10 +174,12 @@ async function sendMessage() {
 
         chatBox.innerHTML += `
             <div class="bot-msg">
-                <b>GREMLIN:</b><br><br>
-                ⚠️ ${err.message}
+                <span class="msg-label">GREMLIN</span>
+                <div class="msg-content">⚠️ ${err.message}</div>
             </div>
         `;
+
+        scrollBottom();
 
     }
 
@@ -271,8 +275,7 @@ if (imageInput && attachBtn) {
 
     imageInput.addEventListener("change", () => {
 
-        attachBtn.textContent =
-            imageInput.files.length ? "✅" : "📎";
+        attachBtn.classList.toggle("has-file", imageInput.files.length > 0);
 
     });
 
@@ -290,14 +293,24 @@ function enhanceCodeBlocks() {
 
         const pre = block.parentElement;
 
-        if (pre.querySelector(".copy-btn")) return;
+        // already wrapped
+        if (pre.parentElement.classList.contains("code-block")) return;
 
-        pre.style.position = "relative";
+        const langMatch = block.className.match(/language-(\w+)/);
+        const lang = langMatch ? langMatch[1] : "text";
+
+        const wrapper = document.createElement("div");
+        wrapper.className = "code-block";
+
+        const header = document.createElement("div");
+        header.className = "code-block-header";
+
+        const langLabel = document.createElement("span");
+        langLabel.className = "code-lang";
+        langLabel.textContent = lang;
 
         const button = document.createElement("button");
-
         button.className = "copy-btn";
-
         button.textContent = "Copy";
 
         button.onclick = async () => {
@@ -322,7 +335,12 @@ function enhanceCodeBlocks() {
 
         };
 
-        pre.appendChild(button);
+        header.appendChild(langLabel);
+        header.appendChild(button);
+
+        pre.parentNode.insertBefore(wrapper, pre);
+        wrapper.appendChild(header);
+        wrapper.appendChild(pre);
 
     });
 
