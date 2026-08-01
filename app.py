@@ -9,6 +9,7 @@ from models import db, User
 import json
 
 app = Flask(__name__)
+app.secret_key = SECRET_KEY
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///gremlin.db"
 db.init_app(app)
 
