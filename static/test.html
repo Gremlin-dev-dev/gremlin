@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>GREMLIN — Test Login</title>
+  <title>GREMLIN — Test Signup</title>
   <style>
     body { font-family: sans-serif; padding: 20px; background: #111; color: #eee; }
     input { display: block; width: 100%; padding: 10px; margin: 8px 0; font-size: 16px; }
@@ -11,18 +11,18 @@
   </style>
 </head>
 <body>
-  <h2>Test /login</h2>
+  <h2>Test /signup</h2>
   <input id="username" placeholder="username">
   <input id="password" placeholder="password" type="text">
-  <button onclick="testLogin()">Log In</button>
+  <button onclick="testSignup()">Sign Up</button>
   <div id="result"></div>
 
   <script>
-    async function testLogin() {
+    async function testSignup() {
       const username = document.getElementById("username").value;
       const password = document.getElementById("password").value;
 
-      const res = await fetch("/login", {
+      const res = await fetch("/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password })
