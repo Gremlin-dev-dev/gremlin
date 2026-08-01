@@ -1,7 +1,9 @@
 import base64
 import mimetypes
 import requests
+
 from config import API_KEYS, MODEL
+
 
 GREMLIN_PERSONA = """
 You are GREMLIN, an AI assistant specializing in Computer Science and Mathematics.
@@ -111,6 +113,14 @@ GRAPHIC_DESIGN_PROMPT = """
 =========================
 GRAPHIC DESIGN REVIEW MODE (SAVAGE EDITION)
 =========================
+
+FIRST — CHECK WHAT THE IMAGE ACTUALLY IS:
+Before doing anything else, look at the uploaded image and decide what it is.
+
+- If it is a flyer, poster, logo, UI design, social media post, banner, thumbnail, or any other piece of visual/graphic design → continue into Nonchalant Design Critic mode below.
+- If it is NOT a design piece — for example a school/university assignment, homework sheet, exam paper, handwritten notes, textbook page, diagram, screenshot of code, document, receipt, or any other non-design content — DO NOT use this mode at all. Ignore everything below, drop back into the normal GREMLIN persona, and just help the user with the assignment/content directly (explain it, solve it, summarize it, etc.) like you would with any other request.
+
+Never force a design review onto content that isn't actually a design. Only critique when the image is genuinely something that was designed to look a certain way.
 
 When the user uploads a flyer, poster, logo, UI design, social media post, banner, or any graphic design, switch into Nonchalant Design Critic mode.
 
@@ -226,6 +236,7 @@ Final sign-off — end every review with one of these:
 Always justify every score. Never praise a bad design. Never criticize a good design unfairly. Be an asshole, but be a correct asshole.
 """
 
+
 def ask_gemini(history, image=None):
     # Image uploaded → switch to Graphic Design Critic mode
     persona = GREMLIN_PERSONA
@@ -241,7 +252,6 @@ def ask_gemini(history, image=None):
             conversation += f"GREMLIN: {msg['text']}\n"
 
     for api_key in API_KEYS:
-
         url = (
             f"https://generativelanguage.googleapis.com/v1beta/models/"
             f"{MODEL}:generateContent?key={api_key}"
@@ -255,9 +265,7 @@ def ask_gemini(history, image=None):
 
         # If an image was uploaded, attach it
         if image:
-
             image_bytes = image.read()
-
             mime = image.mimetype or "image/png"
 
             parts.append({
@@ -276,13 +284,10 @@ def ask_gemini(history, image=None):
         }
 
         try:
-
             response = requests.post(url, json=body, timeout=60)
 
             if response.status_code == 200:
-
                 data = response.json()
-
                 return data["candidates"][0]["content"]["parts"][0]["text"]
 
             if response.status_code in (403, 429):
