@@ -10,3 +10,4 @@ API_KEYS = [
 ]
 
 MODEL = "gemini-2.5-flash"
+SECRET_KEY = os.getenv("SECRET_KEY", "dev-only-fallback-not-for-production")
