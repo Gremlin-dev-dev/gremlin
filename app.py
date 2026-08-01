@@ -1,3 +1,6 @@
+from flask import session
+from werkzeug.security import check_password_hash
+from config import SECRET_KEY
 from flask import Flask, render_template, request, jsonify
 from werkzeug.security import generate_password_hash
 from sqlalchemy.exc import IntegrityError
