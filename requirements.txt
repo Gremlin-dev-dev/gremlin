@@ -2,5 +2,3 @@ Flask
 gunicorn
 google-genai
 python-dotenv
-requests
-Flask-SQLAlchemy
