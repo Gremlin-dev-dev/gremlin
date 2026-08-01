@@ -1,68 +1,104 @@
+<!DOCTYPE html>
 <html lang="en">
 <head>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/github-dark.min.css">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GREMLIN</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/github-dark.min.css">
     <link rel="stylesheet" href="/static/style.css">
- <link rel="manifest" href="/static/manifest.json">
 
-<meta name="theme-color" content="#2563eb">
-
-<link rel="apple-touch-icon" href="/static/icon-192.png">
+    <link rel="manifest" href="/static/manifest.json">
+    <meta name="theme-color" content="#2563eb">
+    <link rel="apple-touch-icon" href="/static/icon-192.png">
 </head>
 <body>
 <div class="app">
 
-    <!-- NEW: overlay for mobile drawer -->
     <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
 
-    <div class="sidebar" id="sidebar">
+    <aside class="sidebar" id="sidebar">
 
-        <button id="new-chat" onclick="newChat()">+ New Chat</button>
-
-        <div id="chat-list"></div>
-
-    </div>
-
-    <div class="chat-container">
-
-        <!-- NEW: mobile header with hamburger -->
-        <div class="mobile-header">
-            <button class="hamburger-btn" id="hamburger-btn" onclick="toggleSidebar()" aria-label="Toggle sidebar">
-                <span></span>
-                <span></span>
-                <span></span>
-            </button>
-            <h1 class="mobile-title">GREMLIN</h1>
+        <div class="sidebar-brand">
+            <div class="logo-mark">G</div>
+            <div class="brand-text">
+                <span class="brand-name">GREMLIN</span>
+                <span class="brand-tag">AI Assistant</span>
+            </div>
         </div>
 
-        <h1 class="desktop-title">GREMLIN</h1>
+        <button id="new-chat" onclick="newChat()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            <span>New chat</span>
+        </button>
+
+        <div class="sidebar-section-label">Recent</div>
+        <div id="chat-list"></div>
+
+        <div class="sidebar-footer">
+            <span class="status-dot"></span> GREMLIN is online
+        </div>
+
+    </aside>
+
+    <main class="chat-container">
+
+        <header class="chat-header">
+            <button class="hamburger-btn" id="hamburger-btn" onclick="toggleSidebar()" aria-label="Toggle sidebar">
+                <span></span><span></span><span></span>
+            </button>
+
+            <div class="header-brand mobile-title">
+                <div class="logo-mark logo-mark-sm">G</div>
+                <h1>GREMLIN</h1>
+            </div>
+
+            <div class="header-brand desktop-title">
+                <h1>GREMLIN</h1>
+                <span class="header-status"><span class="status-dot"></span>Online</span>
+            </div>
+        </header>
 
         <div id="chat-box"></div>
 
-        <div class="input-area">
-           
-         <label for="image" class="attach-btn">📎</label>
+        <div class="composer">
+            <div class="input-area">
 
-            <input
-               type="file"
-               id="image"
-               accept="image/*"
-               hidden
-            >  
+                <label for="image" class="attach-btn" aria-label="Attach image">
+                    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
+                    <span class="file-badge"></span>
+                </label>
 
-            <input
-                id="message"
-                type="text"
-                placeholder="Ask GREMLIN anything..."
-            >
-            <button onclick="sendMessage()">Send</button>
+                <input type="file" id="image" accept="image/*" hidden>
+
+                <input
+                    id="message"
+                    type="text"
+                    placeholder="Ask GREMLIN anything..."
+                    autocomplete="off"
+                >
+
+                <button class="send-btn" onclick="sendMessage()" aria-label="Send message">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                    <span>Send</span>
+                </button>
+
+            </div>
+            <div class="composer-hint">GREMLIN can make mistakes. Verify important information.</div>
         </div>
 
-    </div>
+    </main>
 
 </div>
+
+<div class="image-modal" id="image-modal">
+    <img id="modal-image" alt="Uploaded image preview">
+</div>
+
 <script>
 window.MathJax = {
     tex: {
@@ -81,36 +117,29 @@ window.MathJax = {
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/java.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/javascript.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/xml.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/json.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/bash.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/css.min.js"></script>
 
 <script src="/static/script.js"></script>
 
 <script>
 hljs.highlightAll();
 
-/* ===== NEW: mobile sidebar drawer logic (does not touch script.js) ===== */
 function toggleSidebar() {
     document.getElementById('sidebar').classList.toggle('open');
     document.getElementById('sidebar-overlay').classList.toggle('active');
 }
 
-// auto-close drawer when a chat item or "new chat" is tapped on mobile
 document.getElementById('chat-list').addEventListener('click', function () {
-    if (window.innerWidth <= 768) {
-        document.getElementById('sidebar').classList.remove('open');
-        document.getElementById('sidebar-overlay').classList.remove('active');
-    }
+    if (window.innerWidth <= 768) toggleSidebar();
 });
 document.getElementById('new-chat').addEventListener('click', function () {
-    if (window.innerWidth <= 768) {
-        document.getElementById('sidebar').classList.remove('open');
-        document.getElementById('sidebar-overlay').classList.remove('active');
-    }
+    if (window.innerWidth <= 768) toggleSidebar();
 });
 </script>
-  <div class="image-modal" id="image-modal">
-    <img id="modal-image">
-</div>
-    <script>
+
+<script>
 if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("/static/sw.js");
 }
