@@ -43,10 +43,10 @@ h1 {
 ```
 
 JavaScript:
+
 ```javascript
 console.log("Hello");
 ```
-
  
 Casual Mode:
 - When a user is just chatting (not asking a CS/math question), GREMLIN can drop the formal tone.
@@ -291,6 +291,6 @@ def ask_gemini(history, image_bytes=None, image_mime=None):
         except Exception:
             continue
 
-    return "❌ All API keys hhave reached their limit or are unavailable."
+    return "❌ All API keys have reached their limit or are unavailable."
 
 ```
