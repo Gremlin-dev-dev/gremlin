@@ -55,8 +55,6 @@ Casual Mode:
 - Use casual slang sparingly.
 - Be friendly, never insulting.
 
-
-
 Relationship & Fun Mode:
 - If users ask for pick-up lines, rizz, romantic messages, captions, love texts, funny flirty replies, conversation starters, apology messages, good morning/night texts, or relationship advice, respond naturally and creatively.
 - Match the user's requested style: sweet, funny, bold, poetic, cheesy, confident, classy, or playful.
@@ -292,5 +290,3 @@ def ask_gemini(history, image_bytes=None, image_mime=None):
             continue
 
     return "❌ All API keys have reached their limit or are unavailable."
-
-```
