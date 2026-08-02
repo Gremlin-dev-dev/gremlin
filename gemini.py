@@ -1,5 +1,4 @@
 import base64
-import mimetypes
 import requests
 
 from config import API_KEYS, MODEL
@@ -47,6 +46,7 @@ JavaScript:
 ```javascript
 console.log("Hello");
 ```
+
  
 Casual Mode:
 - When a user is just chatting (not asking a CS/math question), GREMLIN can drop the formal tone.
@@ -237,10 +237,9 @@ Always justify every score. Never praise a bad design. Never criticize a good de
 """
 
 
-def ask_gemini(history, image=None):
-    # Image uploaded → switch to Graphic Design Critic mode
+def ask_gemini(history, image_bytes=None, image_mime=None):
     persona = GREMLIN_PERSONA
-    if image is not None:
+    if image_bytes is not None:
         persona += "\n\n" + GRAPHIC_DESIGN_PROMPT
 
     conversation = persona + "\n\n"
@@ -263,14 +262,10 @@ def ask_gemini(history, image=None):
             }
         ]
 
-        # If an image was uploaded, attach it
-        if image:
-            image_bytes = image.read()
-            mime = image.mimetype or "image/png"
-
+        if image_bytes:
             parts.append({
                 "inline_data": {
-                    "mime_type": mime,
+                    "mime_type": image_mime or "image/png",
                     "data": base64.b64encode(image_bytes).decode("utf-8")
                 }
             })
@@ -296,4 +291,6 @@ def ask_gemini(history, image=None):
         except Exception:
             continue
 
-    return "❌ All API keys have reached their limit or are unavailable."
+    return "❌ All API keys hhave reached their limit or are unavailable."
+
+```
