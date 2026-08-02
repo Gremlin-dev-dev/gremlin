@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Log in — GREMLIN</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="/static/style.css">
+    <meta name="theme-color" content="#2563eb">
+</head>
+<body class="auth-body">
+
+<div class="auth-page">
+    <div class="auth-card">
+
+        <div class="sidebar-brand auth-brand">
+            <div class="logo-mark">G</div>
+            <div class="brand-text">
+                <span class="brand-name">GREMLIN</span>
+                <span class="brand-tag">AI Assistant</span>
+            </div>
+        </div>
+
+        <h2 class="auth-title">Welcome back</h2>
+        <p class="auth-subtitle">Log in to continue your conversations.</p>
+
+        <div class="auth-error" id="auth-error"></div>
+
+        <form id="login-form" class="auth-form">
+            <label class="auth-label" for="identifier">Username or email</label>
+            <input class="auth-input" id="identifier" name="identifier" type="text" autocomplete="username" required>
+
+            <label class="auth-label" for="password">Password</label>
+            <input class="auth-input" id="password" name="password" type="password" autocomplete="current-password" required>
+
+            <button class="auth-submit" type="submit">Log in</button>
+        </form>
+
+        <p class="auth-switch">Don't have an account? <a href="/auth/signup">Sign up</a></p>
+
+    </div>
+</div>
+
+<script src="/static/auth.js"></script>
+</body>
+</html>
