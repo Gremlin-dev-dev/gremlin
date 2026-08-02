@@ -1,8 +1,14 @@
-let history = [];
+let currentConversationId = null;
 
 function scrollBottom() {
     const chatBox = document.getElementById("chat-box");
     chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+function escapeText(text) {
+    const div = document.createElement("div");
+    div.textContent = text;
+    return div.innerHTML;
 }
 
 async function typeReply(element, text) {
@@ -28,6 +34,18 @@ async function typeReply(element, text) {
     }
 }
 
+function attachImageModal(img) {
+    img.onclick = () => {
+        const modal = document.getElementById("image-modal");
+        const modalImg = document.getElementById("modal-image");
+
+        if (modal && modalImg) {
+            modalImg.src = img.src;
+            modal.style.display = "flex";
+        }
+    };
+}
+
 async function sendMessage() {
 
     const input = document.getElementById("message");
@@ -41,44 +59,23 @@ async function sendMessage() {
         return;
     }
 
-    history.push({
-        role: "user",
-        text: message
-    });
-
     const userMessage = document.createElement("div");
     userMessage.className = "user-msg";
 
-    const safe = document.createElement("div");
-    safe.textContent = message;
-
     userMessage.innerHTML = `
         <span class="msg-label">You</span>
-        <div class="msg-content">${safe.innerHTML}</div>
+        <div class="msg-content">${escapeText(message)}</div>
     `;
 
     if (imageInput.files.length) {
-
         const file = imageInput.files[0];
 
         const img = document.createElement("img");
         img.className = "uploaded-image";
         img.src = URL.createObjectURL(file);
-
-        img.onclick = () => {
-
-            const modal = document.getElementById("image-modal");
-            const modalImg = document.getElementById("modal-image");
-
-            if (modal && modalImg) {
-                modalImg.src = img.src;
-                modal.style.display = "flex";
-            }
-
-        };
+        attachImageModal(img);
 
         userMessage.querySelector(".msg-content").appendChild(img);
-
     }
 
     chatBox.appendChild(userMessage);
@@ -106,16 +103,14 @@ async function sendMessage() {
 
         const formData = new FormData();
 
-        formData.append(
-            "history",
-            JSON.stringify(history)
-        );
+        formData.append("message", message);
+
+        if (currentConversationId) {
+            formData.append("conversation_id", currentConversationId);
+        }
 
         if (imageInput.files.length) {
-            formData.append(
-                "image",
-                imageInput.files[0]
-            );
+            formData.append("image", imageInput.files[0]);
         }
 
         const response = await fetch("/chat", {
@@ -123,16 +118,20 @@ async function sendMessage() {
             body: formData
         });
 
+        if (response.status === 401) {
+            window.location.href = "/auth/login";
+            return;
+        }
+
         if (!response.ok) {
-            throw new Error(response.status);
+            const errData = await response.json().catch(() => ({}));
+            throw new Error(errData.error || `Request failed (${response.status})`);
         }
 
         const data = await response.json();
 
-        history.push({
-            role: "assistant",
-            text: data.reply
-        });
+        const isNewConversation = !currentConversationId;
+        currentConversationId = data.conversation_id;
 
         thinking.remove();
 
@@ -166,6 +165,8 @@ async function sendMessage() {
 
         scrollBottom();
 
+        loadConversations(currentConversationId);
+
     } catch (err) {
 
         console.error(err);
@@ -175,7 +176,7 @@ async function sendMessage() {
         chatBox.innerHTML += `
             <div class="bot-msg">
                 <span class="msg-label">GREMLIN</span>
-                <div class="msg-content">⚠️ ${err.message}</div>
+                <div class="msg-content">⚠️ ${escapeText(err.message)}</div>
             </div>
         `;
 
@@ -211,41 +212,143 @@ if (messageInput) {
 // New Chat
 // ===========================
 
+function newChat() {
+    currentConversationId = null;
+    document.getElementById("chat-box").innerHTML = "";
+
+    document.querySelectorAll(".chat-item").forEach(item => {
+        item.classList.remove("active");
+    });
+
+    if (messageInput) {
+        messageInput.focus();
+    }
+}
+
 const newChatBtn = document.getElementById("new-chat");
 
 if (newChatBtn) {
+    newChatBtn.addEventListener("click", newChat);
+}
 
-    newChatBtn.addEventListener("click", () => {
+// ===========================
+// Conversations (sidebar + restore)
+// ===========================
 
-        if (history.length) {
+function renderConversationMessage(msg) {
+    const chatBox = document.getElementById("chat-box");
 
-            const firstUser = history.find(m => m.role === "user");
+    if (msg.role === "user") {
+        const el = document.createElement("div");
+        el.className = "user-msg";
 
-            if (firstUser) {
+        el.innerHTML = `
+            <span class="msg-label">You</span>
+            <div class="msg-content">${escapeText(msg.text)}</div>
+        `;
 
-                const item = document.createElement("div");
-
-                item.className = "chat-item";
-
-                item.textContent =
-                    firstUser.text.length > 30
-                        ? firstUser.text.substring(0, 30) + "..."
-                        : firstUser.text;
-
-                document.getElementById("chat-list").prepend(item);
-
-            }
-
+        if (msg.image_path) {
+            const img = document.createElement("img");
+            img.className = "uploaded-image";
+            img.src = msg.image_path;
+            attachImageModal(img);
+            el.querySelector(".msg-content").appendChild(img);
         }
 
-        history = [];
+        chatBox.appendChild(el);
 
-        document.getElementById("chat-box").innerHTML = "";
+    } else {
+        const el = document.createElement("div");
+        el.className = "bot-msg";
 
-        messageInput.focus();
+        el.innerHTML = `
+            <span class="msg-label">GREMLIN</span>
+            <div class="reply">${marked.parse(msg.text || "")}</div>
+        `;
 
-    });
+        chatBox.appendChild(el);
+    }
+}
 
+async function loadConversation(id) {
+    try {
+        const response = await fetch(`/api/conversations/${id}`);
+
+        if (response.status === 401) {
+            window.location.href = "/auth/login";
+            return;
+        }
+
+        if (!response.ok) return;
+
+        const data = await response.json();
+
+        currentConversationId = data.id;
+
+        const chatBox = document.getElementById("chat-box");
+        chatBox.innerHTML = "";
+
+        data.messages.forEach(renderConversationMessage);
+
+        document.querySelectorAll("pre code").forEach(block => {
+            hljs.highlightElement(block);
+        });
+
+        enhanceCodeBlocks();
+
+        if (window.MathJax) {
+            await MathJax.typesetPromise();
+        }
+
+        document.querySelectorAll(".chat-item").forEach(item => {
+            item.classList.toggle("active", Number(item.dataset.id) === id);
+        });
+
+        scrollBottom();
+
+    } catch (err) {
+        console.error(err);
+    }
+}
+
+async function loadConversations(activeId) {
+    try {
+        const response = await fetch("/api/conversations");
+
+        if (response.status === 401) {
+            window.location.href = "/auth/login";
+            return;
+        }
+
+        if (!response.ok) return;
+
+        const conversations = await response.json();
+
+        const chatList = document.getElementById("chat-list");
+        chatList.innerHTML = "";
+
+        conversations.forEach(conv => {
+            const item = document.createElement("div");
+            item.className = "chat-item";
+            item.dataset.id = conv.id;
+
+            if (activeId && Number(activeId) === conv.id) {
+                item.classList.add("active");
+            }
+
+            item.textContent = conv.title || "New chat";
+
+            item.addEventListener("click", () => loadConversation(conv.id));
+
+            chatList.appendChild(item);
+        });
+
+        return conversations;
+
+    } catch (err) {
+        console.error(err);
+        return [];
+    }
 }
 
 // ===========================
@@ -279,6 +382,24 @@ if (imageInput && attachBtn) {
 
     });
 
+}
+
+// ===========================
+// Logout
+// ===========================
+
+const logoutBtn = document.getElementById("logout-btn");
+
+if (logoutBtn) {
+    logoutBtn.addEventListener("click", async () => {
+        try {
+            const response = await fetch("/auth/logout", { method: "POST" });
+            const data = await response.json().catch(() => ({}));
+            window.location.href = data.redirect || "/auth/login";
+        } catch (err) {
+            window.location.href = "/auth/login";
+        }
+    });
 }
 
 // ===========================
@@ -346,5 +467,16 @@ function enhanceCodeBlocks() {
 
 }
 
-// Run once on page load
-enhanceCodeBlocks();
+// ===========================
+// Init — restore chats on load
+// ===========================
+
+(async function init() {
+    enhanceCodeBlocks();
+
+    const conversations = await loadConversations(null);
+
+    if (conversations && conversations.length > 0) {
+        await loadConversation(conversations[0].id);
+    }
+})();
