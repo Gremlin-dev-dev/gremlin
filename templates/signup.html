@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign up — GREMLIN</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="/static/style.css">
+    <meta name="theme-color" content="#2563eb">
+</head>
+<body class="auth-body">
+
+<div class="auth-page">
+    <div class="auth-card">
+
+        <div class="sidebar-brand auth-brand">
+            <div class="logo-mark">G</div>
+            <div class="brand-text">
+                <span class="brand-name">GREMLIN</span>
+                <span class="brand-tag">AI Assistant</span>
+            </div>
+        </div>
+
+        <h2 class="auth-title">Create your account</h2>
+        <p class="auth-subtitle">Start chatting with GREMLIN.</p>
+
+        <div class="auth-error" id="auth-error"></div>
+
+        <form id="signup-form" class="auth-form">
+            <label class="auth-label" for="username">Username</label>
+            <input class="auth-input" id="username" name="username" type="text" autocomplete="username" minlength="3" maxlength="32" required>
+
+            <label class="auth-label" for="email">Email</label>
+            <input class="auth-input" id="email" name="email" type="email" autocomplete="email" required>
+
+            <label class="auth-label" for="password">Password</label>
+            <input class="auth-input" id="password" name="password" type="password" autocomplete="new-password" minlength="8" required>
+
+            <button class="auth-submit" type="submit">Sign up</button>
+        </form>
+
+        <p class="auth-switch">Already have an account? <a href="/auth/login">Log in</a></p>
+
+    </div>
+</div>
+
+<script src="/static/auth.js"></script>
+</body>
+</html>
