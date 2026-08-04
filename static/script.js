@@ -567,6 +567,58 @@ let voiceOutputEnabled = false;
 
 })();
 
+let cachedMaleVoice = null;
+
+function pickMaleVoice() {
+    if (!("speechSynthesis" in window)) return null;
+
+    const voices = window.speechSynthesis.getVoices();
+    if (!voices.length) return null;
+
+    // Common male-voice names across Chrome / Edge / Safari / OS voice packs
+    const maleNamePatterns = [
+        /\bmale\b/i,
+        /\bdavid\b/i,
+        /\bmark\b/i,
+        /\bguy\b/i,
+        /\bdaniel\b/i,
+        /\balex\b/i,
+        /\bfred\b/i,
+        /\baaron\b/i,
+        /\bjames\b/i,
+        /\bthomas\b/i,
+        /\bnathan\b/i,
+        /\beric\b/i,
+        /\bgordon\b/i,
+        /\barthur\b/i
+    ];
+
+    // Prefer an English voice matching a known male name
+    let match = voices.find(v =>
+        /en/i.test(v.lang) && maleNamePatterns.some(p => p.test(v.name))
+    );
+
+    // Fall back to a male-name match regardless of language
+    if (!match) {
+        match = voices.find(v => maleNamePatterns.some(p => p.test(v.name)));
+    }
+
+    // Last resort: any English voice that isn't explicitly labeled female
+    if (!match) {
+        match = voices.find(v => /en/i.test(v.lang) && !/female|woman|zira|samantha|susan|karen|victoria|moira|tessa/i.test(v.name));
+    }
+
+    return match || null;
+}
+
+if ("speechSynthesis" in window) {
+    // Voice lists load asynchronously in some browsers
+    window.speechSynthesis.onvoiceschanged = () => {
+        cachedMaleVoice = pickMaleVoice();
+    };
+    cachedMaleVoice = pickMaleVoice();
+}
+
 function speakText(text) {
     if (!voiceOutputEnabled || !("speechSynthesis" in window)) return;
 
@@ -585,6 +637,11 @@ function speakText(text) {
     const utterance = new SpeechSynthesisUtterance(clean);
     utterance.rate = 1;
     utterance.pitch = 1;
+
+    const voice = cachedMaleVoice || pickMaleVoice();
+    if (voice) {
+        utterance.voice = voice;
+    }
 
     window.speechSynthesis.speak(utterance);
 }
