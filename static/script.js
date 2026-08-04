@@ -153,6 +153,8 @@ async function sendMessage() {
 
         enhanceCodeBlocks();
 
+        speakText(data.reply);
+
         input.value = "";
 
         if (imageInput) {
@@ -533,6 +535,59 @@ function enhanceCodeBlocks() {
     });
 
 })();
+
+// ===========================
+// Voice Output (text-to-speech)
+// ===========================
+
+let voiceOutputEnabled = false;
+
+(function initVoiceOutput() {
+    const voiceToggle = document.getElementById("voice-toggle");
+
+    if (!voiceToggle) return;
+
+    if (!("speechSynthesis" in window)) {
+        voiceToggle.style.display = "none";
+        return;
+    }
+
+    voiceOutputEnabled = localStorage.getItem("gremlin_voice_output") === "true";
+    voiceToggle.classList.toggle("active", voiceOutputEnabled);
+
+    voiceToggle.addEventListener("click", () => {
+        voiceOutputEnabled = !voiceOutputEnabled;
+        voiceToggle.classList.toggle("active", voiceOutputEnabled);
+        localStorage.setItem("gremlin_voice_output", voiceOutputEnabled);
+
+        if (!voiceOutputEnabled) {
+            window.speechSynthesis.cancel();
+        }
+    });
+
+})();
+
+function speakText(text) {
+    if (!voiceOutputEnabled || !("speechSynthesis" in window)) return;
+
+    const clean = text
+        .replace(/```[\s\S]*?```/g, "")
+        .replace(/`[^`]*`/g, "")
+        .replace(/\$\$[\s\S]*?\$\$/g, "")
+        .replace(/\$[^$]*\$/g, "")
+        .replace(/[*_#>]/g, "")
+        .trim();
+
+    if (!clean) return;
+
+    window.speechSynthesis.cancel();
+
+    const utterance = new SpeechSynthesisUtterance(clean);
+    utterance.rate = 1;
+    utterance.pitch = 1;
+
+    window.speechSynthesis.speak(utterance);
+}
 
 // ===========================
 // Init — restore chats on load
