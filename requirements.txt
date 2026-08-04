@@ -5,3 +5,4 @@ python-dotenv
 Flask-SQLAlchemy
 Flask-Login
 Flask-Migrate
+psycopg2-binary
