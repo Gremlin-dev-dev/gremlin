@@ -1078,3 +1078,43 @@ pre code {
         max-width: 100%;
     }
 }
+/* =========================================================
+   Voice input button
+========================================================= */
+
+.mic-btn {
+    position: relative;
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: background .15s var(--ease), color .15s var(--ease), border-color .15s var(--ease);
+}
+
+.mic-btn:hover {
+    background: var(--surface-3);
+    color: var(--text-primary);
+}
+
+.mic-btn.listening {
+    color: #fff;
+    background: var(--danger);
+    border-color: var(--danger);
+    animation: mic-pulse 1.4s infinite;
+}
+
+@keyframes mic-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(248, 113, 113, 0.45); }
+    50% { box-shadow: 0 0 0 8px rgba(248, 113, 113, 0); }
+}
+
+.mic-btn.unsupported {
+    display: none;
+}
