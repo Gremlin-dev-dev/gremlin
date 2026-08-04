@@ -575,30 +575,46 @@ function pickMaleVoice() {
     const voices = window.speechSynthesis.getVoices();
     if (!voices.length) return null;
 
-    // Common male-voice names across Chrome / Edge / Safari / OS voice packs
+    // Voices that tend to render as deeper / more authoritative "strong male" tones
+    const deepMaleNamePatterns = [
+        /\bdaniel\b/i,   // UK English male, notably deep on Safari/iOS
+        /\bgordon\b/i,   // AU English male, deep
+        /\barthur\b/i,   // UK English male
+        /\bthomas\b/i,   // FR/EN male, deep
+        /\beric\b/i,      // US English male, deep-ish
+        /\bguy\b/i        // Neural, deeper US male
+    ];
+
+    // Broader male-voice names as a fallback pool
     const maleNamePatterns = [
         /\bmale\b/i,
         /\bdavid\b/i,
         /\bmark\b/i,
-        /\bguy\b/i,
-        /\bdaniel\b/i,
         /\balex\b/i,
         /\bfred\b/i,
         /\baaron\b/i,
         /\bjames\b/i,
-        /\bthomas\b/i,
-        /\bnathan\b/i,
-        /\beric\b/i,
-        /\bgordon\b/i,
-        /\barthur\b/i
+        /\bnathan\b/i
     ];
 
-    // Prefer an English voice matching a known male name
+    // Prefer a deep-sounding English male voice first
     let match = voices.find(v =>
-        /en/i.test(v.lang) && maleNamePatterns.some(p => p.test(v.name))
+        /en/i.test(v.lang) && deepMaleNamePatterns.some(p => p.test(v.name))
     );
 
-    // Fall back to a male-name match regardless of language
+    // Then any deep-sounding male voice regardless of language
+    if (!match) {
+        match = voices.find(v => deepMaleNamePatterns.some(p => p.test(v.name)));
+    }
+
+    // Then the broader English male pool
+    if (!match) {
+        match = voices.find(v =>
+            /en/i.test(v.lang) && maleNamePatterns.some(p => p.test(v.name))
+        );
+    }
+
+    // Then the broader pool regardless of language
     if (!match) {
         match = voices.find(v => maleNamePatterns.some(p => p.test(v.name)));
     }
@@ -635,8 +651,8 @@ function speakText(text) {
     window.speechSynthesis.cancel();
 
     const utterance = new SpeechSynthesisUtterance(clean);
-    utterance.rate = 1;
-    utterance.pitch = 1;
+    utterance.rate = 0.95;
+    utterance.pitch = 0.75;   // lower pitch = deeper, stronger-sounding voice
 
     const voice = cachedMaleVoice || pickMaleVoice();
     if (voice) {
