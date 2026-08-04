@@ -1118,3 +1118,46 @@ pre code {
 .mic-btn.unsupported {
     display: none;
 }
+
+/* =========================================================
+   Voice output toggle
+========================================================= */
+
+.voice-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    margin-left: 10px;
+    flex-shrink: 0;
+    color: var(--text-tertiary);
+    background: transparent;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: background .15s var(--ease), color .15s var(--ease), border-color .15s var(--ease);
+}
+
+.voice-toggle:hover {
+    background: var(--surface-3);
+    color: var(--text-primary);
+}
+
+.voice-toggle .icon-speaker-on {
+    display: none;
+}
+
+.voice-toggle.active {
+    color: var(--accent-hover);
+    border-color: var(--accent);
+    background: var(--accent-soft);
+}
+
+.voice-toggle.active .icon-speaker-off {
+    display: none;
+}
+
+.voice-toggle.active .icon-speaker-on {
+    display: block;
+}
