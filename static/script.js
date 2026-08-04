@@ -468,6 +468,73 @@ function enhanceCodeBlocks() {
 }
 
 // ===========================
+// Voice Input (speech-to-text)
+// ===========================
+
+(function initVoiceInput() {
+    const micBtn = document.getElementById("mic-btn");
+    const voiceInput = document.getElementById("message");
+
+    if (!micBtn || !voiceInput) return;
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+        micBtn.classList.add("unsupported");
+        return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.interimResults = true;
+    recognition.lang = "en-US";
+
+    let listening = false;
+    let baseText = "";
+
+    micBtn.addEventListener("click", () => {
+        if (listening) {
+            recognition.stop();
+            return;
+        }
+
+        baseText = voiceInput.value ? voiceInput.value + " " : "";
+
+        try {
+            recognition.start();
+        } catch (err) {
+            console.error(err);
+        }
+    });
+
+    recognition.addEventListener("start", () => {
+        listening = true;
+        micBtn.classList.add("listening");
+    });
+
+    recognition.addEventListener("end", () => {
+        listening = false;
+        micBtn.classList.remove("listening");
+    });
+
+    recognition.addEventListener("error", () => {
+        listening = false;
+        micBtn.classList.remove("listening");
+    });
+
+    recognition.addEventListener("result", (event) => {
+        let transcript = "";
+
+        for (let i = 0; i < event.results.length; i++) {
+            transcript += event.results[i][0].transcript;
+        }
+
+        voiceInput.value = baseText + transcript;
+    });
+
+})();
+
+// ===========================
 // Init — restore chats on load
 // ===========================
 
