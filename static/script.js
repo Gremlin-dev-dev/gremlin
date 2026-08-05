@@ -290,6 +290,70 @@ async function submitEditedMessage(userEl, newText) {
     }
 }
 
+async function streamReply(url, options, replyElement) {
+    const response = await fetch(url, options);
+
+    if (response.status === 401) {
+        window.location.href = "/auth/login";
+        return null;
+    }
+
+    if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.error || `Request failed (${response.status})`);
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+
+    let buffer = "";
+    let fullText = "";
+    let finalData = null;
+
+    while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+
+        const parts = buffer.split("\n\n");
+        buffer = parts.pop();
+
+        for (const part of parts) {
+            const line = part.trim();
+            if (!line.startsWith("data: ")) continue;
+
+            let data;
+            try {
+                data = JSON.parse(line.slice(6));
+            } catch {
+                continue;
+            }
+
+            if (data.chunk) {
+                fullText += data.chunk;
+                replyElement.innerHTML = marked.parse(fullText);
+
+                document.querySelectorAll("pre code").forEach(block => {
+                    hljs.highlightElement(block);
+                });
+
+                if (window.MathJax) {
+                    await MathJax.typesetPromise();
+                }
+
+                scrollBottom();
+            }
+
+            if (data.done) {
+                finalData = data;
+            }
+        }
+    }
+
+    return { fullText, finalData };
+}
+
 async function sendMessage() {
 
     const input = document.getElementById("message");
@@ -328,22 +392,24 @@ async function sendMessage() {
     input.value = "";
     autoResizeMessageInput();
 
-    const thinking = document.createElement("div");
+    const bot = document.createElement("div");
+    bot.className = "bot-msg";
 
-    thinking.className = "bot-msg";
-    thinking.id = "thinking";
-
-    thinking.innerHTML = `
+    bot.innerHTML = `
         <span class="msg-label">GREMLIN</span>
-        <div class="typing">
-            GREMLIN is conquering
-            <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+        <div class="reply">
+            <div class="typing">
+                GREMLIN is conquering
+                <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+            </div>
         </div>
     `;
 
-    chatBox.appendChild(thinking);
+    chatBox.appendChild(bot);
 
     scrollBottom();
+
+    const replyDiv = bot.querySelector(".reply");
 
     try {
 
@@ -359,47 +425,19 @@ async function sendMessage() {
             formData.append("image", imageInput.files[0]);
         }
 
-        const response = await fetch("/chat", {
-            method: "POST",
-            body: formData
-        });
+        const result = await streamReply("/chat/stream", { method: "POST", body: formData }, replyDiv);
 
-        if (response.status === 401) {
-            window.location.href = "/auth/login";
-            return;
+        if (!result) return;
+
+        const { fullText, finalData } = result;
+
+        if (finalData && finalData.conversation_id) {
+            currentConversationId = finalData.conversation_id;
         }
-
-        if (!response.ok) {
-            const errData = await response.json().catch(() => ({}));
-            throw new Error(errData.error || `Request failed (${response.status})`);
-        }
-
-        const data = await response.json();
-
-        const isNewConversation = !currentConversationId;
-        currentConversationId = data.conversation_id;
-
-        thinking.remove();
-
-        const bot = document.createElement("div");
-
-        bot.className = "bot-msg";
-
-        bot.innerHTML = `
-            <span class="msg-label">GREMLIN</span>
-            <div class="reply"></div>
-        `;
-
-        chatBox.appendChild(bot);
-
-        await typeReply(
-            bot.querySelector(".reply"),
-            data.reply
-        );
 
         enhanceCodeBlocks();
 
-        speakText(data.reply);
+        speakText(fullText);
 
         input.value = "";
         autoResizeMessageInput();
@@ -422,14 +460,7 @@ async function sendMessage() {
 
         console.error(err);
 
-        thinking.remove();
-
-        chatBox.innerHTML += `
-            <div class="bot-msg">
-                <span class="msg-label">GREMLIN</span>
-                <div class="msg-content">⚠️ ${escapeText(err.message)}</div>
-            </div>
-        `;
+        replyDiv.innerHTML = `⚠️ ${escapeText(err.message)}`;
 
         scrollBottom();
 
