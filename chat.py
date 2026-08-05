@@ -1,4 +1,3 @@
-
 import os
 import uuid
 from datetime import datetime
@@ -44,6 +43,24 @@ def get_conversation(conv_id):
         "id": conversation.id,
         "title": conversation.title,
         "messages": [m.to_dict() for m in conversation.messages],
+    })
+
+
+@chat_bp.route("/api/conversations/<int:conv_id>", methods=["DELETE"])
+@login_required
+def delete_conversation(conv_id):
+    conversation = Conversation.query.filter_by(
+        id=conv_id, user_id=current_user.id
+    ).first()
+
+    if not conversation:
+        return jsonify({"error": "Conversation not found."}), 404
+
+    db.session.delete(conversation)
+    db.session.commit()
+
+    return jsonify({"success": True})
+
 
 @chat_bp.route("/api/conversations/<int:conv_id>", methods=["PATCH"])
 @login_required
