@@ -27,7 +27,6 @@ print("Hello")
 ```
 
 C++:
-
 ```cpp
 #include <iostream>
 
@@ -37,13 +36,11 @@ int main() {
 ```
 
 HTML:
-
 ```html
 <h1>Hello</h1>
 ```
 
 CSS:
-
 ```css
 h1 {
     color: blue;
@@ -108,7 +105,6 @@ Examples:
 """
 
 GRAPHIC_DESIGN_PROMPT = """
-
 GRAPHIC DESIGN REVIEW MODE (SAVAGE EDITION)
 
 FIRST — CHECK WHAT THE IMAGE ACTUALLY IS:
@@ -233,10 +229,11 @@ Final sign-off — end every review with one of these:
 Always justify every score. Never praise a bad design. Never criticize a good design unfairly. Be an asshole, but be a correct asshole.
 """
 
-def build_conversation_text(history, image_bytes):
-persona = GREMLIN_PERSONA
-if image_bytes is not None:
-persona += "\n\n" + GRAPHIC_DESIGN_PROMPT
+
+def _build_conversation_text(history, image_bytes):
+    persona = GREMLIN_PERSONA
+    if image_bytes is not None:
+        persona += "\n\n" + GRAPHIC_DESIGN_PROMPT
 
     conversation = persona + "\n\n"
 
@@ -248,8 +245,8 @@ persona += "\n\n" + GRAPHIC_DESIGN_PROMPT
 
     return conversation
 
-def build_parts(conversation_text, image_bytes, image_mime):
-parts = [{"text": conversation_text}]
+def _build_parts(conversation_text, image_bytes, image_mime):
+    parts = [{"text": conversation_text}]
 
     if image_bytes:
         parts.append({
@@ -261,8 +258,9 @@ parts = [{"text": conversation_text}]
 
     return parts
 
+
 def ask_gemini(history, image_bytes=None, image_mime=None):
-conversation = build_conversation_text(history, image_bytes)
+    conversation = _build_conversation_text(history, image_bytes)
 
     for api_key in API_KEYS:
         url = (
@@ -288,12 +286,7 @@ conversation = build_conversation_text(history, image_bytes)
     return "❌ All API keys have reached their limit or are unavailable."
 
 def ask_gemini_stream(history, image_bytes=None, image_mime=None):
-"""
-Generator that yields text chunks as Gemini generates them.
-Falls back to the next API key only if a key fails before any
-chunk has been streamed (mid-stream key-switching is not possible).
-"""
-conversation = build_conversation_text(history, image_bytes)
+    conversation = _build_conversation_text(history, image_bytes)
 
     for api_key in API_KEYS:
         url = (
