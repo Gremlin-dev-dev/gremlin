@@ -1,15 +1,14 @@
 import os
-import json
 import uuid
 import mimetypes
 from datetime import datetime
 
-from flask import Blueprint, render_template, request, jsonify, current_app, Response, stream_with_context
+from flask import Blueprint, render_template, request, jsonify, current_app
 from flask_login import login_required, current_user
 
 from extensions import db
 from models import Conversation, Message
-from gemini import ask_gemini, ask_gemini_stream
+from gemini import ask_gemini
 
 chat_bp = Blueprint("chat", __name__)
 
@@ -190,75 +189,6 @@ def chat():
         "conversation_id": conversation.id,
         "title": conversation.title,
     })
-
-
-@chat_bp.route("/chat/stream", methods=["POST"])
-@login_required
-def chat_stream():
-    message = (request.form.get("message") or "").strip()
-    conv_id = request.form.get("conversation_id")
-    image_file = request.files.get("image")
-
-    if not message and not image_file:
-        return jsonify({"error": "Message or image is required."}), 400
-
-    conversation = None
-    if conv_id:
-        conversation = Conversation.query.filter_by(
-            id=conv_id, user_id=current_user.id
-        ).first()
-
-    if not conversation:
-        title = message[:40] + ("..." if len(message) > 40 else "") if message else "New chat"
-        conversation = Conversation(user_id=current_user.id, title=title or "New chat")
-        db.session.add(conversation)
-        db.session.commit()
-
-    image_path, image_bytes, image_mime = _save_image(image_file)
-
-    user_message = Message(
-        conversation_id=conversation.id,
-        role="user",
-        text=message,
-        image_path=image_path,
-    )
-    db.session.add(user_message)
-    db.session.commit()
-
-    history = [
-        {"role": m.role, "text": m.text}
-        for m in Message.query.filter_by(conversation_id=conversation.id)
-        .order_by(Message.created_at)
-        .all()
-        if m.text
-    ]
-
-    conv_id_final = conversation.id
-    conv_title = conversation.title
-
-    def generate():
-        full_reply = ""
-
-        for chunk in ask_gemini_stream(history, image_bytes=image_bytes, image_mime=image_mime):
-            full_reply += chunk
-            yield f"data: {json.dumps({'chunk': chunk})}\n\n"
-
-        bot_message = Message(
-            conversation_id=conv_id_final,
-            role="assistant",
-            text=full_reply,
-        )
-        db.session.add(bot_message)
-
-        conv = Conversation.query.get(conv_id_final)
-        if conv:
-            conv.updated_at = datetime.utcnow()
-
-        db.session.commit()
-
-        yield f"data: {json.dumps({'done': True, 'conversation_id': conv_id_final, 'title': conv_title})}\n\n"
-
-    return Response(stream_with_context(generate()), mimetype="text/event-stream")
 
 
 @chat_bp.route("/api/conversations/<int:conv_id>/retry", methods=["POST"])
