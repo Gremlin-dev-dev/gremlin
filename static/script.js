@@ -46,6 +46,250 @@ function attachImageModal(img) {
     };
 }
 
+// ===========================
+// Message actions (retry / edit)
+// ===========================
+
+function clearMessageActions() {
+    document.querySelectorAll(".msg-actions").forEach(el => el.remove());
+}
+
+function createRetryButton() {
+    const btn = document.createElement("button");
+    btn.className = "msg-action-btn retry-btn";
+    btn.type = "button";
+    btn.innerHTML = `
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
+        <span>Retry</span>
+    `;
+    return btn;
+}
+
+function createEditButton() {
+    const btn = document.createElement("button");
+    btn.className = "msg-action-btn edit-btn";
+    btn.type = "button";
+    btn.innerHTML = `
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+        <span>Edit</span>
+    `;
+    return btn;
+}
+
+function refreshMessageActions() {
+    clearMessageActions();
+
+    const chatBox = document.getElementById("chat-box");
+    const userMsgs = chatBox.querySelectorAll(".user-msg");
+    const botMsgs = chatBox.querySelectorAll(".bot-msg:not(#thinking)");
+
+    if (userMsgs.length) {
+        const lastUser = userMsgs[userMsgs.length - 1];
+        const actions = document.createElement("div");
+        actions.className = "msg-actions";
+        const editBtn = createEditButton();
+        editBtn.addEventListener("click", () => startEditLastMessage(lastUser));
+        actions.appendChild(editBtn);
+        lastUser.appendChild(actions);
+    }
+
+    if (botMsgs.length) {
+        const lastBot = botMsgs[botMsgs.length - 1];
+        const actions = document.createElement("div");
+        actions.className = "msg-actions";
+        const retryBtn = createRetryButton();
+        retryBtn.addEventListener("click", () => retryLastMessage(lastBot));
+        actions.appendChild(retryBtn);
+        lastBot.appendChild(actions);
+    }
+}
+
+async function retryLastMessage(botEl) {
+    if (!currentConversationId) return;
+
+    clearMessageActions();
+
+    const replyDiv = botEl.querySelector(".reply");
+    if (replyDiv) {
+        replyDiv.innerHTML = `
+            <div class="typing">
+                GREMLIN is conquering
+                <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+            </div>
+        `;
+    }
+
+    scrollBottom();
+
+    try {
+        const response = await fetch(`/api/conversations/${currentConversationId}/retry`, {
+            method: "POST"
+        });
+
+        if (response.status === 401) {
+            window.location.href = "/auth/login";
+            return;
+        }
+
+        if (!response.ok) {
+            const errData = await response.json().catch(() => ({}));
+            throw new Error(errData.error || `Request failed (${response.status})`);
+        }
+
+        const data = await response.json();
+
+        await typeReply(replyDiv, data.reply);
+
+        enhanceCodeBlocks();
+        speakText(data.reply);
+        refreshMessageActions();
+        scrollBottom();
+
+        loadConversations(currentConversationId);
+
+    } catch (err) {
+        console.error(err);
+        if (replyDiv) {
+            replyDiv.innerHTML = `⚠️ ${escapeText(err.message)}`;
+        }
+        refreshMessageActions();
+    }
+}
+
+function startEditLastMessage(userEl) {
+    clearMessageActions();
+
+    const contentDiv = userEl.querySelector(".msg-content");
+    const rawText = userEl.dataset.rawText || contentDiv.textContent || "";
+    const originalContent = contentDiv.innerHTML;
+
+    const textarea = document.createElement("textarea");
+    textarea.className = "edit-msg-textarea";
+    textarea.value = rawText;
+
+    const actionsRow = document.createElement("div");
+    actionsRow.className = "edit-msg-actions";
+
+    const cancelBtn = document.createElement("button");
+    cancelBtn.className = "edit-msg-cancel";
+    cancelBtn.type = "button";
+    cancelBtn.textContent = "Cancel";
+
+    const saveBtn = document.createElement("button");
+    saveBtn.className = "edit-msg-save";
+    saveBtn.type = "button";
+    saveBtn.textContent = "Save & Submit";
+
+    actionsRow.appendChild(cancelBtn);
+    actionsRow.appendChild(saveBtn);
+
+    contentDiv.innerHTML = "";
+    contentDiv.appendChild(textarea);
+    contentDiv.appendChild(actionsRow);
+
+    textarea.focus();
+    textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+
+    cancelBtn.addEventListener("click", () => {
+        contentDiv.innerHTML = originalContent;
+        refreshMessageActions();
+    });
+
+    saveBtn.addEventListener("click", () => {
+        const newText = textarea.value.trim();
+        if (newText) {
+            submitEditedMessage(userEl, newText);
+        }
+    });
+}
+
+async function submitEditedMessage(userEl, newText) {
+    if (!currentConversationId) return;
+
+    const contentDiv = userEl.querySelector(".msg-content");
+    const existingImg = contentDiv.querySelector(".uploaded-image");
+
+    contentDiv.textContent = newText;
+    userEl.dataset.rawText = newText;
+
+    if (existingImg) {
+        contentDiv.appendChild(existingImg);
+    }
+
+    let nextEl = userEl.nextElementSibling;
+    if (nextEl && nextEl.classList.contains("bot-msg")) {
+        nextEl.remove();
+    }
+
+    const chatBox = document.getElementById("chat-box");
+
+    const thinking = document.createElement("div");
+    thinking.className = "bot-msg";
+    thinking.id = "thinking";
+    thinking.innerHTML = `
+        <span class="msg-label">GREMLIN</span>
+        <div class="typing">
+            GREMLIN is conquering
+            <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+        </div>
+    `;
+    chatBox.appendChild(thinking);
+    scrollBottom();
+
+    try {
+        const response = await fetch(`/api/conversations/${currentConversationId}/edit-last`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ text: newText })
+        });
+
+        if (response.status === 401) {
+            window.location.href = "/auth/login";
+            return;
+        }
+
+        if (!response.ok) {
+            const errData = await response.json().catch(() => ({}));
+            throw new Error(errData.error || `Request failed (${response.status})`);
+        }
+
+        const data = await response.json();
+
+        thinking.remove();
+
+        const bot = document.createElement("div");
+        bot.className = "bot-msg";
+        bot.innerHTML = `
+            <span class="msg-label">GREMLIN</span>
+            <div class="reply"></div>
+        `;
+        chatBox.appendChild(bot);
+
+        await typeReply(bot.querySelector(".reply"), data.reply);
+
+        enhanceCodeBlocks();
+        speakText(data.reply);
+        refreshMessageActions();
+        scrollBottom();
+
+        loadConversations(currentConversationId);
+
+    } catch (err) {
+        console.error(err);
+        thinking.remove();
+
+        chatBox.innerHTML += `
+            <div class="bot-msg">
+                <span class="msg-label">GREMLIN</span>
+                <div class="msg-content">⚠️ ${escapeText(err.message)}</div>
+            </div>
+        `;
+
+        scrollBottom();
+        refreshMessageActions();
+    }
+}
+
 async function sendMessage() {
 
     const input = document.getElementById("message");
@@ -61,6 +305,7 @@ async function sendMessage() {
 
     const userMessage = document.createElement("div");
     userMessage.className = "user-msg";
+    userMessage.dataset.rawText = message;
 
     userMessage.innerHTML = `
         <span class="msg-label">You</span>
@@ -167,6 +412,8 @@ async function sendMessage() {
             attachBtn.classList.remove("has-file");
         }
 
+        refreshMessageActions();
+
         scrollBottom();
 
         loadConversations(currentConversationId);
@@ -253,6 +500,7 @@ function renderConversationMessage(msg) {
     if (msg.role === "user") {
         const el = document.createElement("div");
         el.className = "user-msg";
+        el.dataset.rawText = msg.text || "";
 
         el.innerHTML = `
             <span class="msg-label">You</span>
@@ -315,6 +563,8 @@ async function loadConversation(id) {
         document.querySelectorAll(".chat-item").forEach(item => {
             item.classList.toggle("active", Number(item.dataset.id) === id);
         });
+
+        refreshMessageActions();
 
         scrollBottom();
 
