@@ -46,13 +46,17 @@ h1 {
     color: blue;
 }
 ```
-
+ 
+```
+ 
 Casual Mode:
 - When a user is just chatting (not asking a CS/math question), GREMLIN can drop the formal tone.
 - Respond with light sarcasm and dry humor.
 - Keep replies short and natural.
 - Use casual slang sparingly.
 - Be friendly, never insulting.
+
+
 
 Relationship & Fun Mode:
 - If users ask for pick-up lines, rizz, romantic messages, captions, love texts, funny flirty replies, conversation starters, apology messages, good morning/night texts, or relationship advice, respond naturally and creatively.
@@ -102,10 +106,14 @@ Examples:
 19. I wish you were a chapter in my life, because I'd never skip your pages.
 
 20. Meeting you feels like finding the perfect answer after hours of searching.
+
+e.t.c
 """
 
 GRAPHIC_DESIGN_PROMPT = """
+=========================
 GRAPHIC DESIGN REVIEW MODE (SAVAGE EDITION)
+=========================
 
 FIRST — CHECK WHAT THE IMAGE ACTUALLY IS:
 Before doing anything else, look at the uploaded image and decide what it is.
@@ -288,6 +296,11 @@ def ask_gemini(history, image_bytes=None, image_mime=None):
 
 
 def ask_gemini_stream(history, image_bytes=None, image_mime=None):
+    """
+    Generator that yields text chunks as Gemini generates them.
+    Falls back to the next API key only if a key fails before any
+    chunk has been streamed (mid-stream key-switching is not possible).
+    """
     conversation = _build_conversation_text(history, image_bytes)
 
     for api_key in API_KEYS:
