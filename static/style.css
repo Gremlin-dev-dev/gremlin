@@ -1164,3 +1164,96 @@ pre code {
 .voice-toggle.active .icon-speaker-on {
     display: block;
 }
+
+/* =========================================================
+   Chat item actions (rename / delete)
+========================================================= */
+
+.chat-item {
+    position: relative;
+    padding-right: 34px;
+}
+
+.chat-item-menu-btn {
+    position: absolute;
+    top: 50%;
+    right: 6px;
+    transform: translateY(-50%);
+    width: 26px;
+    height: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity .15s var(--ease), background .15s var(--ease), color .15s var(--ease);
+}
+
+.chat-item:hover .chat-item-menu-btn,
+.chat-item-menu-btn.open {
+    opacity: 1;
+}
+
+.chat-item-menu-btn:hover {
+    background: var(--surface-3);
+    color: var(--text-primary);
+}
+
+.chat-item-dropdown {
+    position: absolute;
+    top: 100%;
+    right: 6px;
+    margin-top: 4px;
+    background: var(--surface-2);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-pop);
+    z-index: 50;
+    overflow: hidden;
+    display: none;
+    min-width: 130px;
+}
+
+.chat-item-dropdown.open {
+    display: block;
+}
+
+.chat-item-dropdown button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 9px 12px;
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 13px;
+    text-align: left;
+    cursor: pointer;
+    transition: background .15s var(--ease), color .15s var(--ease);
+}
+
+.chat-item-dropdown button:hover {
+    background: var(--surface-3);
+    color: var(--text-primary);
+}
+
+.chat-item-dropdown button.danger:hover {
+    color: var(--danger);
+}
+
+.chat-item-rename-input {
+    width: 100%;
+    background: var(--surface-3);
+    border: 1px solid var(--accent);
+    border-radius: 6px;
+    color: var(--text-primary);
+    font-size: 13.5px;
+    font-family: var(--font-sans);
+    padding: 5px 8px;
+    outline: none;
+}
