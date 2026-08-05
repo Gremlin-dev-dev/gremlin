@@ -81,6 +81,7 @@ async function sendMessage() {
     chatBox.appendChild(userMessage);
 
     input.value = "";
+    autoResizeMessageInput();
 
     const thinking = document.createElement("div");
 
@@ -156,6 +157,7 @@ async function sendMessage() {
         speakText(data.reply);
 
         input.value = "";
+        autoResizeMessageInput();
 
         if (imageInput) {
             imageInput.value = "";
@@ -195,6 +197,12 @@ async function sendMessage() {
 
 const messageInput = document.getElementById("message");
 
+function autoResizeMessageInput() {
+    if (!messageInput) return;
+    messageInput.style.height = "auto";
+    messageInput.style.height = Math.min(messageInput.scrollHeight, 160) + "px";
+}
+
 if (messageInput) {
 
     messageInput.addEventListener("keydown", (e) => {
@@ -207,6 +215,8 @@ if (messageInput) {
         }
 
     });
+
+    messageInput.addEventListener("input", autoResizeMessageInput);
 
 }
 
