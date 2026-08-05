@@ -1,4 +1,5 @@
 import base64
+import json
 import requests
 
 from config import API_KEYS, MODEL
@@ -17,6 +18,7 @@ Rules:
 - Wrap standalone equations or multi-step derivations in double dollar signs on their own lines, like $$\\frac{d}{dx}(3x^3) = 9x^2$$.
 - Solve mathematics step by step, showing each step as its own line or short paragraph, with the math itself always in LaTeX ($ or $$), never in backticks.
 - Do not put variables, numbers, or expressions in backticks — backticks are only for code.
+
 Examples:
 
 Python:
@@ -25,6 +27,7 @@ print("Hello")
 ```
 
 C++:
+
 ```cpp
 #include <iostream>
 
@@ -34,23 +37,19 @@ int main() {
 ```
 
 HTML:
+
 ```html
 <h1>Hello</h1>
 ```
 
 CSS:
+
 ```css
 h1 {
     color: blue;
 }
 ```
 
-JavaScript:
-
-```javascript
-console.log("Hello");
-```
- 
 Casual Mode:
 - When a user is just chatting (not asking a CS/math question), GREMLIN can drop the formal tone.
 - Respond with light sarcasm and dry humor.
@@ -106,14 +105,11 @@ Examples:
 19. I wish you were a chapter in my life, because I'd never skip your pages.
 
 20. Meeting you feels like finding the perfect answer after hours of searching.
-
-e.t.c
 """
 
 GRAPHIC_DESIGN_PROMPT = """
-=========================
+
 GRAPHIC DESIGN REVIEW MODE (SAVAGE EDITION)
-=========================
 
 FIRST — CHECK WHAT THE IMAGE ACTUALLY IS:
 Before doing anything else, look at the uploaded image and decide what it is.
@@ -237,11 +233,10 @@ Final sign-off — end every review with one of these:
 Always justify every score. Never praise a bad design. Never criticize a good design unfairly. Be an asshole, but be a correct asshole.
 """
 
-
-def ask_gemini(history, image_bytes=None, image_mime=None):
-    persona = GREMLIN_PERSONA
-    if image_bytes is not None:
-        persona += "\n\n" + GRAPHIC_DESIGN_PROMPT
+def build_conversation_text(history, image_bytes):
+persona = GREMLIN_PERSONA
+if image_bytes is not None:
+persona += "\n\n" + GRAPHIC_DESIGN_PROMPT
 
     conversation = persona + "\n\n"
 
@@ -251,33 +246,31 @@ def ask_gemini(history, image_bytes=None, image_mime=None):
         else:
             conversation += f"GREMLIN: {msg['text']}\n"
 
+    return conversation
+
+def build_parts(conversation_text, image_bytes, image_mime):
+parts = [{"text": conversation_text}]
+
+    if image_bytes:
+        parts.append({
+            "inline_data": {
+                "mime_type": image_mime or "image/png",
+                "data": base64.b64encode(image_bytes).decode("utf-8")
+            }
+        })
+
+    return parts
+
+def ask_gemini(history, image_bytes=None, image_mime=None):
+conversation = build_conversation_text(history, image_bytes)
+
     for api_key in API_KEYS:
         url = (
             f"https://generativelanguage.googleapis.com/v1beta/models/"
             f"{MODEL}:generateContent?key={api_key}"
         )
 
-        parts = [
-            {
-                "text": conversation
-            }
-        ]
-
-        if image_bytes:
-            parts.append({
-                "inline_data": {
-                    "mime_type": image_mime or "image/png",
-                    "data": base64.b64encode(image_bytes).decode("utf-8")
-                }
-            })
-
-        body = {
-            "contents": [
-                {
-                    "parts": parts
-                }
-            ]
-        }
+        body = {"contents": [{"parts": _build_parts(conversation, image_bytes, image_mime)}]}
 
         try:
             response = requests.post(url, json=body, timeout=60)
@@ -293,3 +286,58 @@ def ask_gemini(history, image_bytes=None, image_mime=None):
             continue
 
     return "❌ All API keys have reached their limit or are unavailable."
+
+def ask_gemini_stream(history, image_bytes=None, image_mime=None):
+"""
+Generator that yields text chunks as Gemini generates them.
+Falls back to the next API key only if a key fails before any
+chunk has been streamed (mid-stream key-switching is not possible).
+"""
+conversation = build_conversation_text(history, image_bytes)
+
+    for api_key in API_KEYS:
+        url = (
+            f"https://generativelanguage.googleapis.com/v1beta/models/"
+            f"{MODEL}:streamGenerateContent?alt=sse&key={api_key}"
+        )
+
+        body = {"contents": [{"parts": _build_parts(conversation, image_bytes, image_mime)}]}
+
+        try:
+            response = requests.post(url, json=body, timeout=60, stream=True)
+
+            if response.status_code in (403, 429):
+                continue
+
+            if response.status_code != 200:
+                continue
+
+            got_any = False
+
+            for line in response.iter_lines(decode_unicode=True):
+                if not line or not line.startswith("data: "):
+                    continue
+
+                payload = line[len("data: "):].strip()
+
+                if not payload or payload == "[DONE]":
+                    continue
+
+                try:
+                    data = json.loads(payload)
+                    text = data["candidates"][0]["content"]["parts"][0]["text"]
+                except (KeyError, IndexError, json.JSONDecodeError, TypeError):
+                    continue
+
+                got_any = True
+                yield text
+
+            if got_any:
+                return
+
+        except Exception:
+            continue
+
+    yield "❌ All API keys have reached their limit or are unavailable."
+
+```
