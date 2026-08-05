@@ -44,12 +44,10 @@ def get_conversation(conv_id):
         "id": conversation.id,
         "title": conversation.title,
         "messages": [m.to_dict() for m in conversation.messages],
-    })
 
-
-@chat_bp.route("/api/conversations/<int:conv_id>", methods=["DELETE"])
+@chat_bp.route("/api/conversations/<int:conv_id>", methods=["PATCH"])
 @login_required
-def delete_conversation(conv_id):
+def rename_conversation(conv_id):
     conversation = Conversation.query.filter_by(
         id=conv_id, user_id=current_user.id
     ).first()
@@ -57,10 +55,19 @@ def delete_conversation(conv_id):
     if not conversation:
         return jsonify({"error": "Conversation not found."}), 404
 
-    db.session.delete(conversation)
+    data = request.get_json(silent=True) or {}
+    title = (data.get("title") or "").strip()
+
+    if not title:
+        return jsonify({"error": "Title cannot be empty."}), 400
+
+    if len(title) > 120:
+        title = title[:120]
+
+    conversation.title = title
     db.session.commit()
 
-    return jsonify({"success": True})
+    return jsonify(conversation.to_dict())
 
 
 def _save_image(file_storage):
