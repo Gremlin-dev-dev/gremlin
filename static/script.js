@@ -323,6 +323,92 @@ async function loadConversation(id) {
     }
 }
 
+function closeAllChatDropdowns() {
+    document.querySelectorAll(".chat-item-dropdown.open").forEach(d => d.classList.remove("open"));
+    document.querySelectorAll(".chat-item-menu-btn.open").forEach(b => b.classList.remove("open"));
+}
+
+async function renameConversationRequest(id, title) {
+    try {
+        const response = await fetch(`/api/conversations/${id}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ title })
+        });
+
+        if (response.status === 401) {
+            window.location.href = "/auth/login";
+            return null;
+        }
+
+        if (!response.ok) return null;
+
+        return await response.json();
+
+    } catch (err) {
+        console.error(err);
+        return null;
+    }
+}
+
+async function deleteConversationRequest(id) {
+    try {
+        const response = await fetch(`/api/conversations/${id}`, {
+            method: "DELETE"
+        });
+
+        if (response.status === 401) {
+            window.location.href = "/auth/login";
+            return false;
+        }
+
+        return response.ok;
+
+    } catch (err) {
+        console.error(err);
+        return false;
+    }
+}
+
+function startRenameInline(item, titleSpan, conv) {
+    closeAllChatDropdowns();
+
+    const input = document.createElement("input");
+    input.type = "text";
+    input.className = "chat-item-rename-input";
+    input.value = conv.title || "New chat";
+
+    titleSpan.replaceWith(input);
+    input.focus();
+    input.select();
+
+    const finish = async (save) => {
+        const newTitle = input.value.trim();
+
+        if (save && newTitle && newTitle !== conv.title) {
+            const updated = await renameConversationRequest(conv.id, newTitle);
+            if (updated) conv.title = updated.title;
+        }
+
+        const span = document.createElement("span");
+        span.className = "chat-item-title";
+        span.textContent = conv.title || "New chat";
+        input.replaceWith(span);
+    };
+
+    input.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+            e.preventDefault();
+            finish(true);
+        } else if (e.key === "Escape") {
+            e.preventDefault();
+            finish(false);
+        }
+    });
+
+    input.addEventListener("blur", () => finish(true));
+}
+
 async function loadConversations(activeId) {
     try {
         const response = await fetch("/api/conversations");
@@ -348,9 +434,63 @@ async function loadConversations(activeId) {
                 item.classList.add("active");
             }
 
-            item.textContent = conv.title || "New chat";
+            const titleSpan = document.createElement("span");
+            titleSpan.className = "chat-item-title";
+            titleSpan.textContent = conv.title || "New chat";
+
+            const menuBtn = document.createElement("button");
+            menuBtn.className = "chat-item-menu-btn";
+            menuBtn.setAttribute("aria-label", "Chat options");
+            menuBtn.innerHTML = `
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="19" r="1"></circle></svg>
+            `;
+
+            const dropdown = document.createElement("div");
+            dropdown.className = "chat-item-dropdown";
+            dropdown.innerHTML = `
+                <button type="button" class="rename-action">Rename</button>
+                <button type="button" class="danger delete-action">Delete</button>
+            `;
+
+            menuBtn.addEventListener("click", (e) => {
+                e.stopPropagation();
+                const isOpen = dropdown.classList.contains("open");
+                closeAllChatDropdowns();
+                if (!isOpen) {
+                    dropdown.classList.add("open");
+                    menuBtn.classList.add("open");
+                }
+            });
+
+            dropdown.querySelector(".rename-action").addEventListener("click", (e) => {
+                e.stopPropagation();
+                closeAllChatDropdowns();
+                startRenameInline(item, titleSpan, conv);
+            });
+
+            dropdown.querySelector(".delete-action").addEventListener("click", async (e) => {
+                e.stopPropagation();
+                closeAllChatDropdowns();
+
+                const confirmed = window.confirm("Delete this conversation? This can't be undone.");
+                if (!confirmed) return;
+
+                const success = await deleteConversationRequest(conv.id);
+
+                if (success) {
+                    item.remove();
+
+                    if (currentConversationId === conv.id) {
+                        newChat();
+                    }
+                }
+            });
 
             item.addEventListener("click", () => loadConversation(conv.id));
+
+            item.appendChild(titleSpan);
+            item.appendChild(menuBtn);
+            item.appendChild(dropdown);
 
             chatList.appendChild(item);
         });
@@ -362,6 +502,10 @@ async function loadConversations(activeId) {
         return [];
     }
 }
+
+document.addEventListener("click", () => {
+    closeAllChatDropdowns();
+});
 
 // ===========================
 // Image Modal
@@ -585,17 +729,15 @@ function pickMaleVoice() {
     const voices = window.speechSynthesis.getVoices();
     if (!voices.length) return null;
 
-    // Voices that tend to render as deeper / more authoritative "strong male" tones
     const deepMaleNamePatterns = [
-        /\bdaniel\b/i,   // UK English male, notably deep on Safari/iOS
-        /\bgordon\b/i,   // AU English male, deep
-        /\barthur\b/i,   // UK English male
-        /\bthomas\b/i,   // FR/EN male, deep
-        /\beric\b/i,      // US English male, deep-ish
-        /\bguy\b/i        // Neural, deeper US male
+        /\bdaniel\b/i,
+        /\bgordon\b/i,
+        /\barthur\b/i,
+        /\bthomas\b/i,
+        /\beric\b/i,
+        /\bguy\b/i
     ];
 
-    // Broader male-voice names as a fallback pool
     const maleNamePatterns = [
         /\bmale\b/i,
         /\bdavid\b/i,
@@ -607,29 +749,24 @@ function pickMaleVoice() {
         /\bnathan\b/i
     ];
 
-    // Prefer a deep-sounding English male voice first
     let match = voices.find(v =>
         /en/i.test(v.lang) && deepMaleNamePatterns.some(p => p.test(v.name))
     );
 
-    // Then any deep-sounding male voice regardless of language
     if (!match) {
         match = voices.find(v => deepMaleNamePatterns.some(p => p.test(v.name)));
     }
 
-    // Then the broader English male pool
     if (!match) {
         match = voices.find(v =>
             /en/i.test(v.lang) && maleNamePatterns.some(p => p.test(v.name))
         );
     }
 
-    // Then the broader pool regardless of language
     if (!match) {
         match = voices.find(v => maleNamePatterns.some(p => p.test(v.name)));
     }
 
-    // Last resort: any English voice that isn't explicitly labeled female
     if (!match) {
         match = voices.find(v => /en/i.test(v.lang) && !/female|woman|zira|samantha|susan|karen|victoria|moira|tessa/i.test(v.name));
     }
@@ -638,7 +775,6 @@ function pickMaleVoice() {
 }
 
 if ("speechSynthesis" in window) {
-    // Voice lists load asynchronously in some browsers
     window.speechSynthesis.onvoiceschanged = () => {
         cachedMaleVoice = pickMaleVoice();
     };
@@ -662,7 +798,7 @@ function speakText(text) {
 
     const utterance = new SpeechSynthesisUtterance(clean);
     utterance.rate = 0.95;
-    utterance.pitch = 0.75;   // lower pitch = deeper, stronger-sounding voice
+    utterance.pitch = 0.75;
 
     const voice = cachedMaleVoice || pickMaleVoice();
     if (voice) {
