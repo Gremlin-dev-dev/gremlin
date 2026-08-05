@@ -245,6 +245,7 @@ def _build_conversation_text(history, image_bytes):
 
     return conversation
 
+
 def _build_parts(conversation_text, image_bytes, image_mime):
     parts = [{"text": conversation_text}]
 
@@ -284,6 +285,7 @@ def ask_gemini(history, image_bytes=None, image_mime=None):
             continue
 
     return "❌ All API keys have reached their limit or are unavailable."
+
 
 def ask_gemini_stream(history, image_bytes=None, image_mime=None):
     conversation = _build_conversation_text(history, image_bytes)
@@ -332,5 +334,3 @@ def ask_gemini_stream(history, image_bytes=None, image_mime=None):
             continue
 
     yield "❌ All API keys have reached their limit or are unavailable."
-
-```
