@@ -169,7 +169,7 @@ def chat():
     if m.text
 ][-30:]
     
-    reply = ask_gemini(history, image_bytes=image_bytes, image_mime=image_mime)
+    reply, sources = ask_gemini(history, image_bytes=image_bytes, image_mime=image_mime)
 
     bot_message = Message(
         conversation_id=conversation.id,
@@ -184,6 +184,7 @@ def chat():
 
     return jsonify({
         "reply": reply,
+        "sources": sources,
         "conversation_id": conversation.id,
         "title": conversation.title,
     })
@@ -226,7 +227,7 @@ def retry_last_message(conv_id):
     if m.text
 ][-30:]
     
-    reply = ask_gemini(history, image_bytes=image_bytes, image_mime=image_mime)
+    reply, sources = ask_gemini(history, image_bytes=image_bytes, image_mime=image_mime)
 
     bot_message = Message(
         conversation_id=conversation.id,
@@ -240,6 +241,7 @@ def retry_last_message(conv_id):
 
     return jsonify({
         "reply": reply,
+        "sources": sources,
         "conversation_id": conversation.id,
     })
 
@@ -289,7 +291,7 @@ def edit_last_message(conv_id):
         if m.text
     ]
 
-    reply = ask_gemini(history, image_bytes=image_bytes, image_mime=image_mime)
+    reply, sources = ask_gemini(history, image_bytes=image_bytes, image_mime=image_mime)
 
     bot_message = Message(
         conversation_id=conversation.id,
@@ -303,6 +305,7 @@ def edit_last_message(conv_id):
 
     return jsonify({
         "reply": reply,
+        "sources": sources,
         "edited_text": new_text,
         "conversation_id": conversation.id,
     })
