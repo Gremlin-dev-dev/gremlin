@@ -237,16 +237,25 @@ def ask_gemini(history, image_bytes=None, image_mime=None):
 
                 if follow_up.status_code == 200:
                     follow_data = follow_up.json()
-                    return follow_data["candidates"][0]["content"]["parts"][0]["text"]
+                    follow_parts = follow_data["candidates"][0]["content"]["parts"]
+                    follow_text_parts = [p["text"] for p in follow_parts if "text" in p]
+                    return "".join(follow_text_parts) if follow_text_parts else "❌ No response text received."
                 else:
                     return "❌ Search completed but the follow-up response failed."
 
-            for part in candidate_parts:
-                if "text" in part:
-                    return part["text"]
+            text_parts = [part["text"] for part in candidate_parts if "text" in part]
+
+            if text_parts:
+                finish_reason = data["candidates"][0].get("finishReason", "")
+                full_text = "".join(text_parts)
+
+                if finish_reason == "MAX_TOKENS":
+                    full_text += "\n\n*(Response was cut off — reaching output limit. Try asking again or asking for a shorter answer.)*"
+
+                return full_text
 
             return "❌ No response text received."
-
+            
         except Exception:
             continue
 
