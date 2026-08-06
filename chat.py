@@ -1,5 +1,6 @@
 import os
 import uuid
+import requests
 import mimetypes
 from datetime import datetime
 
@@ -88,47 +89,44 @@ def rename_conversation(conv_id):
     return jsonify(conversation.to_dict())
 
 
+import cloudinary.uploader
+
+
 def _save_image(file_storage):
     if not file_storage or not file_storage.filename:
         return None, None, None
 
-    upload_folder = current_app.config["UPLOAD_FOLDER"]
-    os.makedirs(upload_folder, exist_ok=True)
-
-    ext = os.path.splitext(file_storage.filename)[1] or ".png"
-    filename = f"{uuid.uuid4().hex}{ext}"
-    filepath = os.path.join(upload_folder, filename)
-
     image_bytes = file_storage.read()
     mime = file_storage.mimetype or "image/png"
 
-    with open(filepath, "wb") as f:
-        f.write(image_bytes)
+    try:
+        upload_result = cloudinary.uploader.upload(
+            image_bytes,
+            folder="gremlin_uploads",
+            resource_type="image",
+        )
+        image_url = upload_result.get("secure_url")
+    except Exception:
+        image_url = None
 
-    relative_path = f"/static/uploads/{filename}"
-
-    return relative_path, image_bytes, mime
+    return image_url, image_bytes, mime
 
 
-def _load_image_from_path(relative_path):
-    if not relative_path:
+def _load_image_from_path(image_url):
+    if not image_url:
         return None, None
 
     try:
-        filename = os.path.basename(relative_path)
-        upload_folder = current_app.config["UPLOAD_FOLDER"]
-        filepath = os.path.join(upload_folder, filename)
+        response = requests.get(image_url, timeout=15)
+        if response.status_code != 200:
+            return None, None
 
-        with open(filepath, "rb") as f:
-            image_bytes = f.read()
+        mime = mimetypes.guess_type(image_url)[0] or "image/png"
 
-        mime = mimetypes.guess_type(filepath)[0] or "image/png"
-
-        return image_bytes, mime
+        return response.content, mime
 
     except Exception:
         return None, None
-
 
 @chat_bp.route("/chat", methods=["POST"])
 @login_required
