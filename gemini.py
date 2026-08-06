@@ -188,8 +188,10 @@ def ask_gemini(history, image_bytes=None, image_mime=None):
         body = {
             "contents": contents,
             "tools": [WEB_SEARCH_TOOL],
+            "generationConfig": {
+                "maxOutputTokens": 4096
+            },
         }
-
         try:
             response = requests.post(url, json=body, timeout=60)
 
@@ -226,6 +228,9 @@ def ask_gemini(history, image_bytes=None, image_mime=None):
                 follow_up_body = {
                     "contents": contents,
                     "tools": [WEB_SEARCH_TOOL],
+                    "generationConfig": {
+                        "maxOutputTokens": 4096
+                    },
                 }
 
                 follow_up = requests.post(url, json=follow_up_body, timeout=60)
