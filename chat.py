@@ -164,13 +164,13 @@ def chat():
     db.session.commit()
 
     history = [
-        {"role": m.role, "text": m.text}
-        for m in Message.query.filter_by(conversation_id=conversation.id)
-        .order_by(Message.created_at)
-        .all()
-        if m.text
-    ]
-
+    {"role": m.role, "text": m.text}
+    for m in Message.query.filter_by(conversation_id=conversation.id)
+    .order_by(Message.created_at)
+    .all()
+    if m.text
+][-30:]
+    
     reply = ask_gemini(history, image_bytes=image_bytes, image_mime=image_mime)
 
     bot_message = Message(
@@ -223,11 +223,11 @@ def retry_last_message(conv_id):
     image_bytes, image_mime = _load_image_from_path(last_user_message.image_path)
 
     history = [
-        {"role": m.role, "text": m.text}
-        for m in messages
-        if m.text
-    ]
-
+    {"role": m.role, "text": m.text}
+    for m in messages
+    if m.text
+][-30:]
+    
     reply = ask_gemini(history, image_bytes=image_bytes, image_mime=image_mime)
 
     bot_message = Message(
