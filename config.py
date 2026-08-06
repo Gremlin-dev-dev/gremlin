@@ -16,6 +16,10 @@ SQLALCHEMY_TRACK_MODIFICATIONS = False
 UPLOAD_FOLDER = str(BASE_DIR / "static" / "uploads")
 MAX_CONTENT_LENGTH = 10 * 1024 * 1024  # 10 MB
 
+CLOUDINARY_CLOUD_NAME = os.getenv("CLOUDINARY_CLOUD_NAME", "")
+CLOUDINARY_API_KEY = os.getenv("CLOUDINARY_API_KEY", "")
+CLOUDINARY_API_SECRET = os.getenv("CLOUDINARY_API_SECRET", "")
+
 API_KEYS = [
     key.strip()
     for key in os.getenv("GEMINI_API_KEYS", "").split(",")
