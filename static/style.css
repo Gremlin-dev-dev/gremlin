@@ -1340,3 +1340,47 @@ pre code {
     background: var(--surface-3);
     color: var(--text-primary);
 }
+
+/* =========================================================
+   Search sources
+========================================================= */
+
+.msg-sources {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+}
+
+.msg-sources-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+    margin-bottom: 2px;
+}
+
+.msg-source-link {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--accent-hover);
+    text-decoration: none;
+    padding: 6px 10px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    transition: background .15s var(--ease), border-color .15s var(--ease);
+}
+
+.msg-source-link:hover {
+    background: var(--surface-3);
+    border-color: var(--accent);
+}
