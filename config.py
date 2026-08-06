@@ -23,3 +23,5 @@ API_KEYS = [
 ]
 
 MODEL = "gemini-2.5-flash"
+
+TAVILY_API_KEY = os.getenv("TAVILY_API_KEY", "")
