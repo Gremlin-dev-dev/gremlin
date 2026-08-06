@@ -3,9 +3,18 @@ from flask import Flask, jsonify, request, redirect, url_for
 from extensions import db, login_manager, migrate
 
 
+import cloudinary
+
 def create_app():
     app = Flask(__name__)
     app.config.from_object("config")
+
+    cloudinary.config(
+        cloud_name=app.config["CLOUDINARY_CLOUD_NAME"],
+        api_key=app.config["CLOUDINARY_API_KEY"],
+        api_secret=app.config["CLOUDINARY_API_SECRET"],
+        secure=True,
+    )
 
     db.init_app(app)
     login_manager.init_app(app)
