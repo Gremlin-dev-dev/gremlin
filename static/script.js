@@ -398,6 +398,7 @@ async function sendMessage() {
         );
 
         enhanceCodeBlocks();
+        renderSources(bot, data.sources);
 
         speakText(data.reply);
 
