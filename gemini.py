@@ -166,25 +166,46 @@ WEB_SEARCH_TOOL = {
 
 def _search_web(query):
     if not TAVILY_API_KEY:
-        return "Web search is not configured."
+        return "Web search is not configured.", []
+
     try:
         response = requests.post(
             "https://api.tavily.com/search",
-            json={"api_key": TAVILY_API_KEY, "query": query, "search_depth": "basic", "max_results": 5},
+            json={
+                "api_key": TAVILY_API_KEY,
+                "query": query,
+                "search_depth": "basic",
+                "max_results": 5,
+            },
             timeout=20,
         )
+
         if response.status_code != 200:
-            return "Web search failed."
+            return "Web search failed.", []
+
         data = response.json()
         results = data.get("results", [])
+
         if not results:
-            return "No search results found."
-        parts = []
+            return "No search results found.", []
+
+        summary_parts = []
+        sources = []
+
         for r in results:
-            parts.append(f"Title: {r.get('title','')}\nURL: {r.get('url','')}\nContent: {r.get('content','')}")
-        return "\n\n".join(parts)
+            title = r.get("title", "")
+            content = r.get("content", "")
+            url = r.get("url", "")
+
+            summary_parts.append(f"Title: {title}\nURL: {url}\nContent: {content}")
+
+            if url:
+                sources.append({"title": title or url, "url": url})
+
+        return "\n\n".join(summary_parts), sources
+
     except Exception:
-        return "Web search failed."
+        return "Web search failed.", []
 
 # ============================================================
 # TOOL 2 — RUN COMMAND (real execution)
@@ -278,12 +299,13 @@ def _handle_function_call(function_call):
     args = function_call.get("args", {})
 
     if name == "search_web":
-        return name, _search_web(args.get("query", ""))
+        result_text, sources = _search_web(args.get("query", ""))
+        return name, result_text, sources
     elif name == "run_command":
-        return name, _run_command(args.get("command", ""))
+        return name, _run_command(args.get("command", "")), []
     elif name == "lookup_cve":
-        return name, _lookup_cve(args.get("query", ""))
-    return name, "Unknown function."
+        return name, _lookup_cve(args.get("query", "")), []
+    return name, "Unknown function.", []
 
 # ============================================================
 # CONVERSATION BUILDER
@@ -350,7 +372,7 @@ def ask_gemini(history, image_bytes=None, image_mime=None):
                     break
 
             if function_call:
-                func_name, result = _handle_function_call(function_call)
+                func_name, result, sources = _handle_function_call(function_call)
 
                 contents.append({"role": "model", "parts": candidate_parts})
                 contents.append({
@@ -374,7 +396,12 @@ def ask_gemini(history, image_bytes=None, image_mime=None):
                     fd = follow_up.json()
                     fp = fd["candidates"][0]["content"]["parts"]
                     text_parts = [p["text"] for p in fp if "text" in p]
-                    return "".join(text_parts) if text_parts else "❌ No response text received."
+                    final_text = "".join(text_parts) if text_parts else "❌ No response text received."
+                    if sources:
+                        final_text += "\n\n**Sources:**\n" + "\n".join(
+                            f"- [{s['title']}]({s['url']})" for s in sources
+                        )
+                    return final_text
                 else:
                     return "❌ Tool executed but the follow-up response failed."
 
