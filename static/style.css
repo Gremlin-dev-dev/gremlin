@@ -1354,33 +1354,72 @@ pre code {
     border-top: 1px solid var(--border);
 }
 
-.msg-sources-label {
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: .05em;
-    text-transform: uppercase;
+.msg-sources {
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+}
+
+.msg-sources-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: transparent;
+    border: none;
     color: var(--text-tertiary);
-    margin-bottom: 2px;
+    font-size: 12.5px;
+    font-weight: 500;
+    cursor: pointer;
+    padding: 4px 2px;
+    transition: color .15s var(--ease);
+}
+
+.msg-sources-toggle:hover {
+    color: var(--text-secondary);
+}
+
+.msg-sources-toggle .chevron {
+    transition: transform .2s var(--ease);
+    display: flex;
+    align-items: center;
+}
+
+.msg-sources-toggle.open .chevron {
+    transform: rotate(180deg);
+}
+
+.msg-sources-list {
+    display: none;
+    flex-direction: column;
+    gap: 5px;
+    margin-top: 8px;
+}
+
+.msg-sources-list.open {
+    display: flex;
 }
 
 .msg-source-link {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 7px;
     font-size: 13px;
-    color: var(--accent-hover);
+    color: var(--text-secondary);
     text-decoration: none;
     padding: 6px 10px;
-    background: var(--surface-2);
-    border: 1px solid var(--border);
     border-radius: var(--radius-sm);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    transition: background .15s var(--ease), border-color .15s var(--ease);
+    transition: background .15s var(--ease), color .15s var(--ease);
 }
 
 .msg-source-link:hover {
     background: var(--surface-3);
-    border-color: var(--accent);
+    color: var(--accent-hover);
+}
+
+.msg-source-link .globe-icon {
+    flex-shrink: 0;
+    opacity: .7;
 }
