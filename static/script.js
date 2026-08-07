@@ -46,6 +46,30 @@ function attachImageModal(img) {
     };
 }
 
+function renderSources(botEl, sources) {
+    if (!sources || !sources.length) return;
+
+    const container = document.createElement("div");
+    container.className = "msg-sources";
+
+    const label = document.createElement("div");
+    label.className = "msg-sources-label";
+    label.textContent = "Sources";
+    container.appendChild(label);
+
+    sources.forEach(src => {
+        const link = document.createElement("a");
+        link.className = "msg-source-link";
+        link.href = src.url;
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+        link.textContent = src.title || src.url;
+        container.appendChild(link);
+    });
+
+    botEl.appendChild(container);
+}
+
 // ===========================
 // Message actions (retry / edit)
 // ===========================
