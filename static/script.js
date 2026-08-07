@@ -52,10 +52,18 @@ function renderSources(botEl, sources) {
     const container = document.createElement("div");
     container.className = "msg-sources";
 
-    const label = document.createElement("div");
-    label.className = "msg-sources-label";
-    label.textContent = "Sources";
-    container.appendChild(label);
+    const toggle = document.createElement("button");
+    toggle.type = "button";
+    toggle.className = "msg-sources-toggle";
+    toggle.innerHTML = `
+        <span>Sources (${sources.length})</span>
+        <span class="chevron">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </span>
+    `;
+
+    const list = document.createElement("div");
+    list.className = "msg-sources-list";
 
     sources.forEach(src => {
         const link = document.createElement("a");
@@ -63,9 +71,31 @@ function renderSources(botEl, sources) {
         link.href = src.url;
         link.target = "_blank";
         link.rel = "noopener noreferrer";
-        link.textContent = src.title || src.url;
-        container.appendChild(link);
+
+        let siteName = src.title || src.url;
+        try {
+            siteName = new URL(src.url).hostname.replace(/^www\./, "");
+        } catch {
+            // fall back to title/url as-is
+        }
+
+        link.innerHTML = `
+            <span class="globe-icon">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+            </span>
+            <span>${escapeText(src.title || siteName)}</span>
+        `;
+
+        list.appendChild(link);
     });
+
+    toggle.addEventListener("click", () => {
+        const isOpen = list.classList.toggle("open");
+        toggle.classList.toggle("open", isOpen);
+    });
+
+    container.appendChild(toggle);
+    container.appendChild(list);
 
     botEl.appendChild(container);
 }
