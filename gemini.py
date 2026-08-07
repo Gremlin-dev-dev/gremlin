@@ -166,26 +166,46 @@ WEB_SEARCH_TOOL = {
 
 def _search_web(query):
     if not TAVILY_API_KEY:
-        return "Web search is not configured."
+        return "Web search is not configured.", []
+
     try:
         response = requests.post(
             "https://api.tavily.com/search",
-            json={"api_key": TAVILY_API_KEY, "query": query, "search_depth": "basic", "max_results": 5},
+            json={
+                "api_key": TAVILY_API_KEY,
+                "query": query,
+                "search_depth": "basic",
+                "max_results": 5,
+            },
             timeout=20,
         )
+
         if response.status_code != 200:
-            return "Web search failed."
+            return "Web search failed.", []
+
         data = response.json()
         results = data.get("results", [])
-        if not results:
-            return "No search results found."
-        parts = []
-        for r in results:
-            parts.append(f"Title: {r.get('title','')}\nURL: {r.get('url','')}\nContent: {r.get('content','')}")
-        return "\n\n".join(parts)
-    except Exception:
-        return "Web search failed."
 
+        if not results:
+            return "No search results found.", []
+
+        summary_parts = []
+        sources = []
+
+        for r in results:
+            title = r.get("title", "")
+            content = r.get("content", "")
+            url = r.get("url", "")
+
+            summary_parts.append(f"Title: {title}\nURL: {url}\nContent: {content}")
+
+            if url:
+                sources.append({"title": title or url, "url": url})
+
+        return "\n\n".join(summary_parts), sources
+
+    except Exception:
+        return "Web search failed.", []
 # ============================================================
 # TOOL 2 — RUN COMMAND (real execution)
 # ============================================================
