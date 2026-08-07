@@ -1,8 +1,32 @@
-
 import base64
 import requests
 
 from config import API_KEYS, MODEL, TAVILY_API_KEY
+
+# ============================================================
+# OPTIONAL PLUGIN MODULE (safe to remove — app still works)
+# ============================================================
+try:
+    from hacker_core import (
+        HACKER_PERSONA,
+        HACK_TOOL,
+        CVE_TOOL,
+        handle_hacker_function_call,
+        get_roast,
+    )
+    HACKER_LOADED = True
+except ImportError:
+    HACKER_PERSONA = ""
+    HACK_TOOL = None
+    CVE_TOOL = None
+    HACKER_LOADED = False
+
+    def handle_hacker_function_call(name, args):
+        return None
+
+    def get_roast():
+        return "Roasts disabled — plugin module not found."
+# ============================================================
 
 
 GREMLIN_PERSONA = """
@@ -151,8 +175,18 @@ def _search_web(query):
     except Exception:
         return "Web search failed.", []
 
+def _build_tools():
+    """Combine core tools with optional plugin tools."""
+    tools = [WEB_SEARCH_TOOL]
+    if HACKER_LOADED and HACK_TOOL:
+        tools.append(HACK_TOOL)
+        tools.append(CVE_TOOL)
+    return tools
+
 def _build_conversation_text(history, image_bytes):
     persona = GREMLIN_PERSONA
+    if HACKER_LOADED:
+        persona += "\n\n" + HACKER_PERSONA
     if image_bytes is not None:
         persona += "\n\n" + GRAPHIC_DESIGN_PROMPT
 
@@ -194,7 +228,7 @@ def ask_gemini(history, image_bytes=None, image_mime=None):
 
         body = {
             "contents": contents,
-            "tools": [WEB_SEARCH_TOOL],
+            "tools": _build_tools(),
             "generationConfig": {
                 "maxOutputTokens": 8192
             },
@@ -218,16 +252,25 @@ def ask_gemini(history, image_bytes=None, image_mime=None):
                     function_call = part["functionCall"]
                     break
 
-            if function_call and function_call.get("name") == "search_web":
-                query = function_call.get("args", {}).get("query", "")
-                result_text, sources = _search_web(query)
+            if function_call:
+                call_name = function_call.get("name")
+                call_args = function_call.get("args", {})
+                sources = []
+
+                if call_name == "search_web":
+                    query = call_args.get("query", "")
+                    result_text, sources = _search_web(query)
+                else:
+                    result_text = handle_hacker_function_call(call_name, call_args)
+                    if result_text is None:
+                        return "❌ Unknown function.", []
 
                 contents.append({"role": "model", "parts": candidate_parts})
                 contents.append({
                     "role": "function",
                     "parts": [{
                         "functionResponse": {
-                            "name": "search_web",
+                            "name": call_name,
                             "response": {"result": result_text}
                         }
                     }]
@@ -235,7 +278,7 @@ def ask_gemini(history, image_bytes=None, image_mime=None):
 
                 follow_up_body = {
                     "contents": contents,
-                    "tools": [WEB_SEARCH_TOOL],
+                    "tools": _build_tools(),
                     "generationConfig": {
                         "maxOutputTokens": 8192
                     },
