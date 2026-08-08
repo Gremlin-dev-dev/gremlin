@@ -929,14 +929,17 @@ function enhanceCodeBlocks() {
 }
 
 // ===========================
-// Voice Input (speech-to-text)
+// Voice Input (speech-to-text, continuous, manual stop)
 // ===========================
 
 (function initVoiceInput() {
     const micBtn = document.getElementById("mic-btn");
     const voiceInput = document.getElementById("message");
+    const inputArea = document.querySelector(".input-area");
+    const overlay = document.getElementById("voice-listening-overlay");
+    const stopBtn = document.getElementById("voice-stop-btn");
 
-    if (!micBtn || !voiceInput) return;
+    if (!micBtn || !voiceInput || !overlay || !stopBtn) return;
 
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
@@ -946,55 +949,89 @@ function enhanceCodeBlocks() {
     }
 
     const recognition = new SpeechRecognition();
-    recognition.continuous = false;
+    recognition.continuous = true;
     recognition.interimResults = true;
     recognition.lang = "en-US";
 
     let listening = false;
+    let userStopped = false;
     let baseText = "";
+    let finalTranscript = "";
 
-    micBtn.addEventListener("click", () => {
-        if (listening) {
-            recognition.stop();
-            return;
-        }
-
+    function startListening() {
+        userStopped = false;
         baseText = voiceInput.value ? voiceInput.value + " " : "";
+        finalTranscript = "";
 
         try {
             recognition.start();
         } catch (err) {
             console.error(err);
         }
-    });
+    }
+
+    function stopListening() {
+        userStopped = true;
+        recognition.stop();
+    }
+
+    micBtn.addEventListener("click", startListening);
+    stopBtn.addEventListener("click", stopListening);
 
     recognition.addEventListener("start", () => {
         listening = true;
-        micBtn.classList.add("listening");
+        inputArea.classList.add("listening-mode");
+        overlay.classList.add("active");
     });
 
     recognition.addEventListener("end", () => {
         listening = false;
-        micBtn.classList.remove("listening");
+
+        if (userStopped) {
+            inputArea.classList.remove("listening-mode");
+            overlay.classList.remove("active");
+            autoResizeMessageInput();
+            return;
+        }
+
+        // Browser ended the session on its own (silence/timeout) —
+        // restart automatically since the user hasn't chosen to stop.
+        try {
+            recognition.start();
+        } catch (err) {
+            inputArea.classList.remove("listening-mode");
+            overlay.classList.remove("active");
+        }
     });
 
-    recognition.addEventListener("error", () => {
-        listening = false;
-        micBtn.classList.remove("listening");
+    recognition.addEventListener("error", (e) => {
+        if (e.error === "no-speech" || e.error === "aborted") {
+            // Harmless — recognition will restart via the 'end' handler.
+            return;
+        }
+
+        userStopped = true;
+        inputArea.classList.remove("listening-mode");
+        overlay.classList.remove("active");
     });
 
     recognition.addEventListener("result", (event) => {
-        let transcript = "";
+        let interim = "";
 
-        for (let i = 0; i < event.results.length; i++) {
-            transcript += event.results[i][0].transcript;
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+            const transcript = event.results[i][0].transcript;
+
+            if (event.results[i].isFinal) {
+                finalTranscript += transcript + " ";
+            } else {
+                interim += transcript;
+            }
         }
 
-        voiceInput.value = baseText + transcript;
+        voiceInput.value = baseText + finalTranscript + interim;
     });
 
 })();
-
 // ===========================
 // Voice Output (text-to-speech)
 // ===========================
