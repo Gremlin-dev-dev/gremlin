@@ -26,6 +26,12 @@ API_KEYS = [
     if key.strip()
 ]
 
+ALLOWED_EMAILS = [
+    email.strip().lower()
+    for email in os.getenv("ALLOWED_EMAILS", "").split(",")
+    if email.strip()
+]
+
 MODEL = "gemini-2.5-flash"
 
 TAVILY_API_KEY = os.getenv("TAVILY_API_KEY", "")
