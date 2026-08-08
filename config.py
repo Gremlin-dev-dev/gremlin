@@ -12,7 +12,12 @@ SQLALCHEMY_DATABASE_URI = os.getenv(
     "DATABASE_URL", f"sqlite:///{BASE_DIR / 'gremlin.db'}"
 )
 SQLALCHEMY_TRACK_MODIFICATIONS = False
-
+SQLALCHEMY_ENGINE_OPTIONS = {
+    "pool_pre_ping": True,
+    "pool_recycle": 280,
+    "pool_size": 3,
+    "max_overflow": 2,
+}
 UPLOAD_FOLDER = str(BASE_DIR / "static" / "uploads")
 MAX_CONTENT_LENGTH = 10 * 1024 * 1024  # 10 MB
 
