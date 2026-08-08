@@ -13,9 +13,10 @@ def signup_page():
         return redirect(url_for("chat.index"))
     return render_template("signup.html")
 
-
 @auth_bp.route("/signup", methods=["POST"])
 def signup():
+    from config import ALLOWED_EMAILS
+
     data = request.get_json(silent=True) or request.form
 
     username = (data.get("username") or "").strip()
@@ -27,6 +28,9 @@ def signup():
 
     if "@" not in email or "." not in email.split("@")[-1]:
         return jsonify({"error": "Enter a valid email address."}), 400
+
+    if ALLOWED_EMAILS and email not in ALLOWED_EMAILS:
+        return jsonify({"error": "Signups are currently invite-only."}), 403
 
     if len(password) < 8:
         return jsonify({"error": "Password must be at least 8 characters."}), 400
